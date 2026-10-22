@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 
 // GET /api/teachers - List teachers
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { search, status } = req.query;
     let query = `SELECT * FROM teachers WHERE 1=1`;
@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
     }
 
     query += ` ORDER BY id DESC`;
-    const teachers = db.prepare(query).all(...params);
+    const teachers = await db.all(query, params);
     res.json(teachers);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -29,19 +29,19 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/teachers/:id - Teacher details with assigned subjects & classes
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    const teacher = await db.get('SELECT * FROM teachers WHERE id = ?', [req.params.id]);
     if (!teacher) {
       return res.status(404).json({ error: 'Teacher not found' });
     }
 
-    const subjects = db.prepare(`
+    const subjects = await db.all(`
       SELECT s.*, c.name as class_name, c.section as class_section
       FROM subjects s
       LEFT JOIN classes c ON s.class_id = c.id
       WHERE s.teacher_id = ?
-    `).all(req.params.id);
+    `, [req.params.id]);
 
     res.json({
       ...teacher,
@@ -53,7 +53,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/teachers - Add new teacher
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const {
       employee_id,
@@ -74,14 +74,12 @@ router.post('/', (req, res) => {
 
     const empId = employee_id || `TCH-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const stmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO teachers (
         employee_id, first_name, last_name, email, phone,
         subject_specialization, qualification, joining_date, salary, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = stmt.run(
+    `, [
       empId,
       first_name,
       last_name,
@@ -92,9 +90,9 @@ router.post('/', (req, res) => {
       joining_date || new Date().toISOString().split('T')[0],
       salary || 0,
       status || 'Active'
-    );
+    ]);
 
-    const newTeacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(result.lastInsertRowid);
+    const newTeacher = await db.get('SELECT * FROM teachers WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json(newTeacher);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -102,7 +100,7 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/teachers/:id - Update teacher
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const {
       first_name,
@@ -115,7 +113,7 @@ router.put('/:id', (req, res) => {
       status
     } = req.body;
 
-    const stmt = db.prepare(`
+    await db.run(`
       UPDATE teachers SET
         first_name = COALESCE(?, first_name),
         last_name = COALESCE(?, last_name),
@@ -126,9 +124,7 @@ router.put('/:id', (req, res) => {
         salary = COALESCE(?, salary),
         status = COALESCE(?, status)
       WHERE id = ?
-    `);
-
-    stmt.run(
+    `, [
       first_name,
       last_name,
       email,
@@ -138,9 +134,9 @@ router.put('/:id', (req, res) => {
       salary,
       status,
       req.params.id
-    );
+    ]);
 
-    const updated = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    const updated = await db.get('SELECT * FROM teachers WHERE id = ?', [req.params.id]);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -148,9 +144,9 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/teachers/:id
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM teachers WHERE id = ?').run(req.params.id);
+    const result = await db.run('DELETE FROM teachers WHERE id = ?', [req.params.id]);
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Teacher not found' });
     }

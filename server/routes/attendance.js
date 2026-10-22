@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 
 // GET /api/attendance - Query attendance by date & optional class_id
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { date, class_id } = req.query;
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -33,7 +33,7 @@ router.get('/', (req, res) => {
     }
 
     query += ` ORDER BY s.roll_no, s.first_name`;
-    const records = db.prepare(query).all(...params);
+    const records = await db.all(query, params);
 
     // Summary counts for this date
     const summary = {
@@ -55,33 +55,28 @@ router.get('/', (req, res) => {
 });
 
 // POST /api/attendance/mark - Batch record attendance
-router.post('/mark', (req, res) => {
+router.post('/mark', async (req, res) => {
   try {
     const { date, records } = req.body;
     if (!date || !Array.isArray(records) || records.length === 0) {
       return res.status(400).json({ error: 'Date and records array are required' });
     }
 
-    const insertOrUpdate = db.prepare(`
-      INSERT INTO attendance (student_id, date, status, notes)
-      VALUES (@student_id, @date, @status, @notes)
-      ON CONFLICT(student_id, date) DO UPDATE SET
-        status = excluded.status,
-        notes = excluded.notes
-    `);
+    for (const row of records) {
+      await db.run(`
+        INSERT INTO attendance (student_id, date, status, notes)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          status = VALUES(status),
+          notes = VALUES(notes)
+      `, [
+        row.student_id,
+        date,
+        row.status || 'Present',
+        row.notes || null
+      ]);
+    }
 
-    const updateMany = db.transaction((rows) => {
-      for (const row of rows) {
-        insertOrUpdate.run({
-          student_id: row.student_id,
-          date: date,
-          status: row.status || 'Present',
-          notes: row.notes || null
-        });
-      }
-    });
-
-    updateMany(records);
     res.json({ message: 'Attendance recorded successfully', count: records.length });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -3,9 +3,9 @@ const router = express.Router();
 const db = require('../db');
 
 // GET /api/classes - List all classes with student counts
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const classes = db.prepare(`
+    const classes = await db.all(`
       SELECT 
         c.*,
         COUNT(s.id) as student_count
@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
       LEFT JOIN students s ON s.class_id = c.id
       GROUP BY c.id
       ORDER BY c.name, c.section
-    `).all();
+    `);
 
     res.json(classes);
   } catch (err) {
@@ -22,20 +22,20 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/classes/:id - Class details with students list and subjects
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(req.params.id);
+    const cls = await db.get('SELECT * FROM classes WHERE id = ?', [req.params.id]);
     if (!cls) {
       return res.status(404).json({ error: 'Class not found' });
     }
 
-    const students = db.prepare('SELECT * FROM students WHERE class_id = ? ORDER BY roll_no, first_name').all(req.params.id);
-    const subjects = db.prepare(`
+    const students = await db.all('SELECT * FROM students WHERE class_id = ? ORDER BY roll_no, first_name', [req.params.id]);
+    const subjects = await db.all(`
       SELECT sub.*, t.first_name as teacher_first_name, t.last_name as teacher_last_name
       FROM subjects sub
       LEFT JOIN teachers t ON sub.teacher_id = t.id
       WHERE sub.class_id = ?
-    `).all(req.params.id);
+    `, [req.params.id]);
 
     res.json({
       ...cls,
@@ -48,20 +48,19 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/classes - Create new class
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { name, section, room_number, capacity } = req.body;
     if (!name || !section) {
       return res.status(400).json({ error: 'Class name and section are required' });
     }
 
-    const stmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO classes (name, section, room_number, capacity)
       VALUES (?, ?, ?, ?)
-    `);
+    `, [name, section, room_number || null, capacity || 40]);
 
-    const result = stmt.run(name, section, room_number || null, capacity || 40);
-    const newClass = db.prepare('SELECT * FROM classes WHERE id = ?').get(result.lastInsertRowid);
+    const newClass = await db.get('SELECT * FROM classes WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json(newClass);
   } catch (err) {
     res.status(500).json({ error: err.message });
