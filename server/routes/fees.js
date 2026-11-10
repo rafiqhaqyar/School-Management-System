@@ -7,7 +7,15 @@ router.get('/', async (req, res) => {
   try {
     const { status, student_id } = req.query;
     let query = `
-      SELECT f.*, s.first_name, s.last_name, s.admission_no, c.name as class_name, c.section as class_section
+      SELECT 
+        f.*,
+        s.first_name,
+        s.last_name,
+        s.admission_no,
+        s.roll_no,
+        c.name as class_name,
+        c.section as class_section,
+        c.monthly_fee
       FROM fees f
       JOIN students s ON f.student_id = s.id
       LEFT JOIN classes c ON s.class_id = c.id
@@ -32,7 +40,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/fees/stats - Financial summaries
+// GET /api/fees/stats - Financial summaries in PKR
 router.get('/stats', async (req, res) => {
   try {
     const stats = await db.get(`
@@ -53,12 +61,24 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// POST /api/fees - Create fee invoice
+// POST /api/fees - Create fee invoice (Auto-computes sequential class fee if not specified)
 router.post('/', async (req, res) => {
   try {
     const { student_id, title, amount, due_date, status, payment_method } = req.body;
-    if (!student_id || !title || !amount || !due_date) {
-      return res.status(400).json({ error: 'Student ID, title, amount and due date are required' });
+    if (!student_id || !title || !due_date) {
+      return res.status(400).json({ error: 'Student ID, title, and due date are required' });
+    }
+
+    // Determine amount from class monthly_fee if not provided
+    let finalAmount = amount;
+    if (!finalAmount) {
+      const student = await db.get(`
+        SELECT c.monthly_fee 
+        FROM students s 
+        LEFT JOIN classes c ON s.class_id = c.id 
+        WHERE s.id = ?
+      `, [student_id]);
+      finalAmount = student?.monthly_fee || 900.00;
     }
 
     const invoiceNo = `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -67,7 +87,7 @@ router.post('/', async (req, res) => {
     const result = await db.run(`
       INSERT INTO fees (invoice_no, student_id, title, amount, due_date, status, paid_date, payment_method)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [invoiceNo, student_id, title, amount, due_date, status || 'Pending', paidDate, payment_method || null]);
+    `, [invoiceNo, student_id, title, finalAmount, due_date, status || 'Pending', paidDate, payment_method || null]);
 
     const newInvoice = await db.get('SELECT * FROM fees WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json(newInvoice);

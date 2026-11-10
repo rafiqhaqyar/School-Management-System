@@ -15,9 +15,9 @@ router.get('/', async (req, res) => {
     const params = [];
 
     if (search) {
-      query += ` AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ? OR s.roll_no LIKE ?)`;
+      query += ` AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ? OR s.roll_no LIKE ? OR s.parent_phone LIKE ?)`;
       const term = `%${search}%`;
-      params.push(term, term, term, term);
+      params.push(term, term, term, term, term);
     }
 
     if (class_id) {
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
       params.push(status);
     }
 
-    query += ` ORDER BY s.id DESC`;
+    query += ` ORDER BY CAST(s.roll_no AS UNSIGNED) ASC, s.id DESC`;
     const students = await db.all(query, params);
     res.json(students);
   } catch (err) {
@@ -58,7 +58,8 @@ router.get('/:id', async (req, res) => {
         COUNT(*) as total,
         SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) as present,
         SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) as late,
-        SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent
+        SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent,
+        SUM(CASE WHEN status = 'Excused' THEN 1 ELSE 0 END) as leave_days
       FROM attendance
       WHERE student_id = ?
     `, [req.params.id]);
@@ -89,7 +90,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/students - Register/Enroll student
+// POST /api/students - Register/Enroll student (Teacher or Admin)
 router.post('/', async (req, res) => {
   try {
     const {
@@ -112,6 +113,21 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'First name and last name are required' });
     }
 
+    if (!parent_phone) {
+      return res.status(400).json({ error: "Father / Parent contact number is required for all students" });
+    }
+
+    // Calculate sequential roll number if not manually provided
+    let finalRollNo = roll_no;
+    if (!finalRollNo && class_id) {
+      const maxRollRow = await db.get(`
+        SELECT COALESCE(MAX(CAST(roll_no AS UNSIGNED)), 0) + 1 AS next_roll
+        FROM students
+        WHERE class_id = ?
+      `, [class_id]);
+      finalRollNo = String(maxRollRow?.next_roll || 1);
+    }
+
     const admNo = admission_no || `ADM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const result = await db.run(`
@@ -127,9 +143,9 @@ router.post('/', async (req, res) => {
       gender || 'Other',
       dob || null,
       class_id || null,
-      roll_no || null,
-      parent_name || null,
-      parent_phone || null,
+      finalRollNo || '1',
+      parent_name || 'Father / Guardian',
+      parent_phone,
       parent_email || null,
       address || null,
       status || 'Active',

@@ -26,18 +26,15 @@ async function runMigration() {
     console.log(`Executing schema.sql in \`${dbName}\`...`);
     await connection.query(sql);
 
-    console.log('Tables created successfully!');
-    const [tables] = await connection.query('SHOW TABLES');
-    console.log('Current tables in database:');
-    tables.forEach(t => {
-      console.log(` - ${Object.values(t)[0]}`);
-    });
+    console.log('Running data synchronization & seed script...');
+    await connection.end();
+
+    // Run upgrade-db to populate default seed data
+    require('./upgrade-db');
 
   } catch (err) {
     console.error('Migration failed:', err);
     process.exit(1);
-  } finally {
-    await connection.end();
   }
 }
 

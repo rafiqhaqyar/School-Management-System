@@ -26,6 +26,8 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/uploads', express.static(uploadsDir));
 
 // API Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/settings', require('./routes/settings'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/teachers', require('./routes/teachers'));
 app.use('/api/classes', require('./routes/classes'));
@@ -34,10 +36,21 @@ app.use('/api/grades', require('./routes/grades'));
 app.use('/api/fees', require('./routes/fees'));
 app.use('/api/notices', require('./routes/notices'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/meetings', require('./routes/meetings'));
+app.use('/api/rules', require('./routes/rules'));
+app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/assembly', require('./routes/assembly'));
+app.use('/api/timetable', require('./routes/timetable'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString(), system: 'School Management System' });
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    system: 'School Management System',
+    currency: 'PKR',
+    developer: 'Rafiq Haqyar (+92 322-9594616)'
+  });
 });
 
 // SPA fallback
@@ -54,12 +67,35 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error', message: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`===================================================`);
-  console.log(`🎓 School Management System Server Running!`);
-  console.log(`📍 Local URL: http://localhost:${PORT}`);
-  console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`===================================================`);
-});
+// Auto-verify and setup attached database on startup
+async function startServer() {
+  try {
+    const db = require('./db');
+    const tables = await db.all('SHOW TABLES');
+    if (!tables || tables.length === 0) {
+      console.log('Database tables not detected. Initializing attached schema...');
+      const setupDatabase = require('./setup-db');
+      await setupDatabase();
+    }
+  } catch (err) {
+    console.log('Database connection check:', err.message);
+    try {
+      const setupDatabase = require('./setup-db');
+      await setupDatabase();
+    } catch (setupErr) {
+      console.warn('Note: Ensure MySQL server is running or configure .env credentials.');
+    }
+  }
+
+  app.listen(PORT, () => {
+    console.log(`===================================================`);
+    console.log(`🎓 School Management System Server Running!`);
+    console.log(`📍 Local URL: http://localhost:${PORT}`);
+    console.log(`⚡ Developer: Rafiq Haqyar (923229594616)`);
+    console.log(`===================================================`);
+  });
+}
+
+startServer();
 
 module.exports = app;

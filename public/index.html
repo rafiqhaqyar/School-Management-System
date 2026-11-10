@@ -3,80 +3,329 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EduPulse | School Management System</title>
-  <meta name="description" content="A comprehensive, high-performance School Management System for students, teachers, academics, attendance, and finance.">
+  <title id="pageTitle">EduPulse | School Management System</title>
+  <meta name="description" content="A comprehensive School Management System for students, faculty, academics, morning assembly, principal administration, and PKR finances.">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+
+  <!-- =========================================================================
+       AUTHENTICATION / ROLE SELECTION OVERLAY
+       ========================================================================= -->
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card" style="max-width:490px;">
+      <!-- Compact Header with Small Logo & Security Warning -->
+      <div class="auth-header" style="margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:6px;">
+          <span id="authModalLogo" style="font-size:1.3rem; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); overflow:hidden; flex-shrink:0;">🎓</span>
+          <h2 style="font-family:var(--font-display); font-size:1.4rem; margin:0; font-weight:700;" id="authModalSchoolName">EduPulse Multi-Role Portal</h2>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.84rem; margin:0 0 10px 0;">Official School Administration, Faculty & Student Portal</p>
+
+        <!-- Unauthorized Access Security Warning Box -->
+        <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:9px 12px; text-align:left; display:flex; align-items:flex-start; gap:8px;">
+          <span style="font-size:1.15rem; line-height:1; color:#ef4444; flex-shrink:0;">⛔</span>
+          <div>
+            <strong style="color:#f87171; font-size:0.79rem; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px;">
+              Security Warning: Authorized Personnel Only
+            </strong>
+            <p style="margin:0; font-size:0.75rem; color:#fca5a5; line-height:1.35;">
+              Unauthorized access or tampering is strictly prohibited and subject to legal prosecution. All IP addresses, login attempts, and device activities are logged and monitored 24/7.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth Navigation Tabs: Sign In vs Register vs Forgot Password -->
+      <div class="auth-tabs" style="display:flex; gap:6px; margin-bottom:16px;">
+        <button type="button" class="auth-tab-btn active" id="authTabLogin" onclick="App.switchAuthTab('login')">
+          <span>🔐</span> Sign In
+        </button>
+        <button type="button" class="auth-tab-btn" id="authTabRegister" onclick="App.switchAuthTab('register')">
+          <span>📝</span> Register
+        </button>
+        <button type="button" class="auth-tab-btn" id="authTabForgot" onclick="App.switchAuthTab('forgot')">
+          <span>🔑</span> Forgot Password
+        </button>
+      </div>
+
+      <!-- TAB 1: LOGIN SECTION -->
+      <div id="authLoginSection">
+        <!-- Security Lockout Banner (Active after 5 consecutive failed attempts) -->
+        <div id="authLockoutBanner" style="display:none; padding:16px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:10px; color:#fca5a5; font-size:0.88rem; margin-bottom:16px; text-align:center;">
+          <div style="font-weight:700; font-size:1.05rem; color:#ef4444; margin-bottom:4px; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <span>🔒</span> Security Lockout Active
+          </div>
+          <div id="authLockoutMessage" style="font-size:0.84rem; color:var(--text-muted); margin-bottom:8px;">
+            Too many failed attempts (5/5). You are temporarily not allowed to enter username or password.
+          </div>
+          <div style="font-size:1.4rem; font-weight:800; color:#fff; font-family:var(--font-mono); letter-spacing:1px;">
+            ⏳ Please wait: <span id="authLockoutTimer">01:00</span>
+          </div>
+          <div style="margin-top:10px;">
+            <a href="javascript:void(0)" onclick="App.switchAuthTab('forgot')" style="color:#a5b4fc; font-size:0.82rem; text-decoration:underline;">
+              Forgot password? Recover your account now →
+            </a>
+          </div>
+        </div>
+
+        <!-- In-form Error Alert Message -->
+        <div id="authLoginError" style="display:none; padding:10px 14px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); border-radius:8px; color:#f87171; font-size:0.85rem; margin-bottom:14px; align-items:center; gap:8px;">
+          <span>⚠️</span>
+          <span id="authLoginErrorText">Incorrect username or password. Please try again.</span>
+        </div>
+
+        <!-- Secure Manual Login Form (Empty fields for everyone) -->
+        <form id="authLoginForm" onsubmit="App.handleLogin(event)" autocomplete="off">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Username *</label>
+            <input type="text" id="authUsername" class="form-control" placeholder="Enter your username" autocomplete="off" required>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Password *</label>
+            <input type="password" id="authPassword" class="form-control" placeholder="Enter your password" autocomplete="new-password" required>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+            <a href="javascript:void(0)" onclick="App.switchAuthTab('forgot')" style="color:#818cf8; font-size:0.82rem; text-decoration:none; font-weight:600;">
+              🔑 Forgot Password?
+            </a>
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
+            🔐 Sign In to Portal
+          </button>
+          <div style="font-size:0.76rem; color:var(--text-dim); margin-top:10px; text-align:center; line-height:1.4;">
+            🛡️ Security Policy: 5 consecutive failed attempts will lock access for 1 minute (5 minutes if repeated). All users must enter valid credentials manually.
+          </div>
+        </form>
+      </div>
+
+      <!-- TAB 2: FORGOT PASSWORD / ACCOUNT RECOVERY SECTION -->
+      <div id="authForgotSection" style="display:none;">
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px; text-align:center;">
+          Confirm your identity using the exact email or phone number saved to your account, or the secret recovery word you set. This form does not send an email or SMS.
+        </div>
+
+        <form id="authForgotForm" onsubmit="App.handleForgotPassword(event)" autocomplete="off">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Username *</label>
+            <input type="text" id="forgotUsername" class="form-control" placeholder="Enter your username (e.g. admin, student)" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Select Confirmation Method *</label>
+            <div class="recovery-method-grid">
+              <button type="button" class="recovery-method-btn active" id="recMethodEmail" onclick="App.setRecoveryMethod('email')">
+                <span>📧</span>
+                <span>Gmail / Email</span>
+              </button>
+              <button type="button" class="recovery-method-btn" id="recMethodPhone" onclick="App.setRecoveryMethod('phone')">
+                <span>📱</span>
+                <span>Mobile Phone</span>
+              </button>
+              <button type="button" class="recovery-method-btn" id="recMethodSecret" onclick="App.setRecoveryMethod('secret_word')">
+                <span>🔒</span>
+                <span>Secret Word</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label" id="recValueLabel">Registered Gmail / Email Address *</label>
+            <input type="text" id="recValueInput" class="form-control" placeholder="Enter your registered email" required>
+            <small id="recValueHelp" style="color:var(--text-dim); font-size:0.75rem; margin-top:3px; display:block;">
+              Enter the exact email address registered to your account.
+            </small>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label">New Password *</label>
+              <input type="password" id="recNewPassword" class="form-control" placeholder="New secure password" required minlength="4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm New Password *</label>
+              <input type="password" id="recConfirmPassword" class="form-control" placeholder="Re-enter password" required minlength="4">
+            </div>
+          </div>
+
+          <button type="submit" id="recSubmitBtn" class="btn btn-primary" style="width:100%; justify-content:center; padding:11px;">
+            ✨ Reset Password & Unlock Account
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="App.switchAuthTab('login')" style="width:100%; justify-content:center; padding:9px; margin-top:8px;">
+            ← Return to Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- TAB 3: REGISTRATION SECTION -->
+      <div id="authRegisterSection" style="display:none;">
+        <form id="authRegisterForm" onsubmit="App.handleRegister(event)">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Register As</label>
+            <select id="regRole" class="form-control" onchange="App.onRegisterRoleChange(this.value)">
+              <option value="student">🎒 Student (Enrolled in Class)</option>
+              <option value="teacher">👨‍🏫 Faculty / Teacher</option>
+            </select>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input type="text" id="regFullName" class="form-control" placeholder="e.g. Tariq Ahmed" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username *</label>
+              <input type="text" id="regUsername" class="form-control" placeholder="e.g. tariq12" required>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label">Password *</label>
+              <input type="password" id="regPassword" class="form-control" placeholder="Choose a secure password" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Secret Recovery Word *</label>
+              <input type="text" id="regSecretWord" class="form-control" placeholder="e.g. favorite city or word" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Email / Gmail Address *</label>
+            <input type="email" id="regEmail" class="form-control" placeholder="e.g. student@gmail.com" required>
+          </div>
+
+          <!-- Student-specific fields -->
+          <div id="regStudentFields">
+            <div class="form-grid" style="margin-bottom:12px;">
+              <div class="form-group">
+                <label class="form-label">Select Class (Prep A to Class 8) *</label>
+                <select id="regClassId" class="form-control class-select-target">
+                  <option value="">Select Class</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select id="regGender" class="form-control">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div class="form-group">
+                <label class="form-label">Father / Guardian Name *</label>
+                <input type="text" id="regParentName" class="form-control" placeholder="Father's Name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Father Contact Number * <span style="color:var(--danger);">(Mandatory)</span></label>
+                <input type="tel" id="regParentPhone" class="form-control" placeholder="+92 322-9594616">
+              </div>
+            </div>
+          </div>
+
+          <!-- Teacher-specific fields -->
+          <div id="regTeacherFields" style="display:none;">
+            <div class="form-grid" style="margin-bottom:12px;">
+              <div class="form-group">
+                <label class="form-label">Designation / Role</label>
+                <input type="text" id="regDesignation" class="form-control" placeholder="e.g. Mathematics Teacher">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Subject Specialization</label>
+                <input type="text" id="regSubject" class="form-control" placeholder="e.g. Mathematics / Physics">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Contact Phone Number</label>
+              <input type="tel" id="regTeacherPhone" class="form-control" placeholder="+92 322-9594616">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
+            ✨ Create & Register Account
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MAIN APP INTERFACE
+       ========================================================================= -->
   <div class="app-container">
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand-section">
-        <div class="brand-icon">🎓</div>
+        <div class="brand-icon" id="sidebarLogoIcon">🎓</div>
         <div class="brand-text">
-          <h2>EduPulse</h2>
-          <span>School System</span>
+          <h2 id="sidebarSchoolName">EduPulse</h2>
+          <span id="sidebarTagline">School System</span>
         </div>
       </div>
 
       <ul class="nav-links">
-        <li class="nav-item">
+        <li class="nav-item" data-role-access="admin,principal,teacher,student">
           <a class="nav-link active" data-view="dashboard">
             <span class="nav-icon">📊</span>
             <span>Dashboard</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" data-view="students">
-            <span class="nav-icon">🎓</span>
-            <span>Students</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-view="teachers">
-            <span class="nav-icon">👨‍🏫</span>
-            <span>Faculty & Staff</span>
-          </a>
-        </li>
-        <li class="nav-item">
+        <li class="nav-item" data-role-access="admin,principal,teacher,student">
           <a class="nav-link" data-view="classes">
             <span class="nav-icon">🏫</span>
-            <span>Classes</span>
+            <span>Classes (Prep A - 8th)</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" data-view="attendance">
-            <span class="nav-icon">📋</span>
-            <span>Attendance</span>
+        <li class="nav-item" data-role-access="admin,principal,teacher">
+          <a class="nav-link" data-view="students">
+            <span class="nav-icon">🎓</span>
+            <span>Students Directory</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" data-view="grades">
-            <span class="nav-icon">📈</span>
-            <span>Grades & Exams</span>
+        <li class="nav-item" data-role-access="admin,principal,teacher,student">
+          <a class="nav-link" data-view="teachers">
+            <span class="nav-icon">👨‍🏫</span>
+            <span>Teachers & Faculty</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" data-view="fees">
-            <span class="nav-icon">💳</span>
-            <span>Fees & Billing</span>
+        <li class="nav-item" data-role-access="admin,principal,teacher,student">
+          <a class="nav-link" data-view="assembly">
+            <span class="nav-icon">🏃</span>
+            <span>Morning Assembly</span>
           </a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" data-role-access="admin,principal,teacher,student">
           <a class="nav-link" data-view="notices">
             <span class="nav-icon">📢</span>
             <span>Notice Board</span>
           </a>
         </li>
+        <li class="nav-item" data-role-access="admin,principal,teacher,student">
+          <a class="nav-link" data-view="official-contact">
+            <span class="nav-icon">🏛️</span>
+            <span>Official Contact & Logo</span>
+          </a>
+        </li>
       </ul>
 
+      <!-- Logged-in User Profile & Role Switch -->
       <div class="sidebar-footer">
-        <div class="user-badge">
-          <div class="avatar-circle">RH</div>
-          <div class="user-info">
-            <div class="user-name">Rafiq Haqyar</div>
-            <div class="user-role">Administrator</div>
+        <div class="user-badge user-badge-action">
+          <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="App.openChangeCredentialsModal()" title="Click to Change Username / Password">
+            <div class="avatar-circle" id="userAvatarBadge">RH</div>
+            <div class="user-info">
+              <div class="user-name" id="userDisplayName">Rafiq Haqyar</div>
+              <div class="user-role" id="userRoleBadge">Administrator</div>
+            </div>
           </div>
+          <button class="btn-logout" onclick="App.showLogin()" title="Switch Account / Logout">
+            Logout
+          </button>
         </div>
       </div>
     </aside>
@@ -87,13 +336,27 @@
       <header class="top-header">
         <div class="header-search">
           <span class="search-icon">🔍</span>
-          <input type="text" id="globalSearchInput" class="search-input" placeholder="Search students, faculty, or ID...">
+          <input type="text" id="globalSearchInput" class="search-input" placeholder="Search students, faculty, phone, or roll...">
         </div>
 
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="App.openModal('newStudentModal')">
+          <div id="headerSportsWeekPill" style="display:flex; align-items:center; gap:6px; padding:5px 12px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:20px; font-size:0.78rem; color:#fbbf24;">
+            <span>🏃 Sports Week:</span>
+            <strong id="headerSportsWeekText">Nov 18 - Nov 24, 2026</strong>
+          </div>
+
+          <button class="btn btn-secondary" id="btnHeaderSettings" onclick="App.openModal('schoolSettingsModal')" title="Edit School Name, Logo & Contact">
+            ⚙️ School Info
+          </button>
+
+          <button class="btn btn-secondary" onclick="App.openChangeCredentialsModal()" title="Change Login Username & Password">
+            🔑 My Account
+          </button>
+
+          <button class="btn btn-primary" id="btnHeaderEnroll" onclick="App.openModal('newStudentModal')">
             <span>+ Enroll Student</span>
           </button>
+
           <button class="btn-icon" id="themeToggleBtn" title="Toggle Theme">
             ☀️
           </button>
@@ -107,13 +370,69 @@
         <section id="view-dashboard" class="view-section active">
           <div class="page-title-bar">
             <div class="title-group">
-              <h1>School Overview Dashboard</h1>
-              <p>Real-time analytics across academic, administrative, and student operations.</p>
+              <h1 id="dashSchoolGreeting">School Overview Dashboard</h1>
+              <p>Real-time analytics across academic, administrative, and student operations (in PKR).</p>
             </div>
-            <div>
-              <button class="btn btn-secondary" onclick="App.openModal('newNoticeModal')">
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" onclick="App.loadView('official-contact')">
+                🏛️ School Profile & Logo
+              </button>
+              <button class="btn btn-primary" onclick="App.openModal('newNoticeModal')">
                 📢 Post Announcement
               </button>
+            </div>
+          </div>
+
+          <!-- PROMINENT OFFICIAL SCHOOL CONTACT & LOGO BANNER -->
+          <div class="school-official-banner">
+            <div class="school-banner-left">
+              <div class="school-banner-logo" id="dashLogoBox">🎓</div>
+              <div>
+                <h2 id="dashSchoolName" style="font-family:var(--font-display); font-size:1.35rem; margin:0 0 3px 0; color:#fff;">EduPulse Academy</h2>
+                <p id="dashTagline" style="color:var(--text-muted); font-size:0.84rem; margin:0;">Excellence in Academic and Character Development</p>
+              </div>
+            </div>
+
+            <div class="school-banner-contacts">
+              <div class="banner-contact-pill">
+                <span class="pill-icon">📞</span>
+                <div>
+                  <div class="pill-label">School Contact</div>
+                  <strong id="dashPhone">+92 322-9594616</strong>
+                </div>
+              </div>
+
+              <div class="banner-contact-pill">
+                <span class="pill-icon">✉️</span>
+                <div>
+                  <div class="pill-label">School Email</div>
+                  <strong id="dashEmail">rafiqhaqyar524@gmail.com</strong>
+                </div>
+              </div>
+
+              <div class="banner-contact-pill">
+                <span class="pill-icon">📍</span>
+                <div>
+                  <div class="pill-label">Campus Address</div>
+                  <strong id="dashAddress">Main Campus / Bajaur</strong>
+                </div>
+              </div>
+
+              <div class="banner-contact-pill">
+                <span class="pill-icon">🏃</span>
+                <div>
+                  <div class="pill-label">Sports Week Date</div>
+                  <strong id="dashSportsWeek">Nov 18 - Nov 24, 2026</strong>
+                </div>
+              </div>
+
+              <div class="banner-contact-pill">
+                <span class="pill-icon">☕</span>
+                <div>
+                  <div class="pill-label">Tea & Recess Break</div>
+                  <strong id="dashRecessBreak">30 Minutes Daily</strong>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -125,7 +444,7 @@
                 <span class="kpi-badge positive">Enrolled</span>
               </div>
               <div class="kpi-number" id="kpiTotalStudents">--</div>
-              <div class="kpi-label">Total Active Students</div>
+              <div class="kpi-label">Active Students (Prep - 8th)</div>
             </div>
 
             <div class="kpi-card accent-cyan">
@@ -134,7 +453,7 @@
                 <span class="kpi-badge info">Faculty</span>
               </div>
               <div class="kpi-number" id="kpiTotalTeachers">--</div>
-              <div class="kpi-label">Certified Teaching Staff</div>
+              <div class="kpi-label">Faculty & Staff Members</div>
             </div>
 
             <div class="kpi-card accent-emerald">
@@ -149,10 +468,10 @@
             <div class="kpi-card accent-amber">
               <div class="kpi-top">
                 <div class="kpi-icon" style="color: #fbbf24;">💳</div>
-                <span class="kpi-badge positive">Collected</span>
+                <span class="kpi-badge positive">PKR</span>
               </div>
-              <div class="kpi-number" id="kpiFeesCollected">--</div>
-              <div class="kpi-label">Tuition Fees Collected</div>
+              <div class="kpi-number" id="kpiFeesCollected">PKR 0</div>
+              <div class="kpi-label">Tuition Fees Collected (PKR)</div>
             </div>
           </div>
 
@@ -173,7 +492,9 @@
                   <table class="modern-table">
                     <thead>
                       <tr>
+                        <th>Roll #</th>
                         <th>Student</th>
+                        <th>Father Contact</th>
                         <th>Class</th>
                         <th>Status</th>
                         <th>Action</th>
@@ -193,7 +514,7 @@
               <div class="panel">
                 <div class="panel-header">
                   <div class="panel-title">
-                    <span>🏫</span> Class Enrollment
+                    <span>🏫</span> Class Enrollment (Prep - 8th)
                   </div>
                 </div>
                 <div id="dashboardClassDist">
@@ -221,7 +542,7 @@
           <div class="page-title-bar">
             <div class="title-group">
               <h1>Student Directory</h1>
-              <p>Manage student profiles, enrollments, class assignments, and records.</p>
+              <p>Manage student profiles, father contacts, roll numbers, and class enrollments (Prep A to Class 8).</p>
             </div>
             <button class="btn btn-primary" onclick="App.openModal('newStudentModal')">
               + Enroll New Student
@@ -231,7 +552,7 @@
           <div class="panel">
             <div class="filter-bar">
               <select id="studentClassFilter" class="filter-select class-select-target" onchange="App.renderStudents()">
-                <option value="">All Classes</option>
+                <option value="">All Classes (Prep A to Class 8)</option>
               </select>
               <select id="studentStatusFilter" class="filter-select" onchange="App.renderStudents()">
                 <option value="">All Statuses</option>
@@ -245,10 +566,11 @@
               <table class="modern-table">
                 <thead>
                   <tr>
+                    <th>Roll #</th>
                     <th>Student Name</th>
                     <th>Admission No</th>
                     <th>Class / Section</th>
-                    <th>Parent / Contact</th>
+                    <th>Father / Contact Number</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -261,78 +583,525 @@
           </div>
         </section>
 
-        <!-- 3. TEACHERS VIEW -->
+        <!-- 3. TEACHERS VIEW (Columns: Profile, Class Incharge, Due Classes, Remaining Classes, Attendance) -->
         <section id="view-teachers" class="view-section">
           <div class="page-title-bar">
             <div class="title-group">
-              <h1>Faculty & Staff Directory</h1>
-              <p>Academic instructors, department heads, and faculty management.</p>
+              <h1>Faculty & Staff Workload Directory</h1>
+              <p>Faculty members, Principal <strong>Musharaf Khan</strong>, and PT Sir <strong>Tariq Mehmood</strong>. Track weekly due periods, remaining classes, and daily attendance.</p>
             </div>
-            <button class="btn btn-primary" onclick="App.openModal('newTeacherModal')">
-              + Add Faculty Member
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" id="btnTeacherAttRegister" onclick="App.switchTeacherViewTab('attendance')">
+                📋 Teacher Attendance
+              </button>
+              <button class="btn btn-primary" id="btnAddTeacher" onclick="App.openModal('newTeacherModal')">
+                + Add Faculty Member
+              </button>
+            </div>
+          </div>
+
+          <!-- Sub-Tab Navigation inside Teachers -->
+          <div class="tab-pill-bar">
+            <button class="tab-pill active" id="tabTeacherWorkloadBtn" onclick="App.switchTeacherViewTab('workload')">
+              👨‍🏫 Faculty Workload & Column Directory
+            </button>
+            <button class="tab-pill" id="tabTeacherAttBtn" onclick="App.switchTeacherViewTab('attendance')">
+              ⏱️ Daily Teacher Attendance Register
             </button>
           </div>
 
-          <div id="teachersGrid" class="classes-grid">
-            <!-- Rendered dynamically -->
+          <!-- TAB A: Faculty Workload & Directory in Column Form -->
+          <div id="teacherWorkloadSection" class="panel">
+            <div class="filter-bar">
+              <input type="text" id="teacherSearchInput" class="filter-select" placeholder="Search teacher by name, designation, or subject..." oninput="App.renderTeachers()" style="flex:1;">
+              <select id="teacherStatusFilter" class="filter-select" onchange="App.renderTeachers()">
+                <option value="">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="On Leave">On Leave</option>
+              </select>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Teacher & Designation</th>
+                    <th>Class Incharge / Assigned</th>
+                    <th>Due Classes (Week)</th>
+                    <th>Taken Classes</th>
+                    <th>Remaining Classes</th>
+                    <th id="thTeacherSalary">Salary (PKR)</th>
+                    <th>Today's Status</th>
+                    <th id="thTeacherActions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="teachersWorkloadTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB B: Teacher Daily Attendance Register -->
+          <div id="teacherAttendanceSection" class="panel" style="display:none;">
+            <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <label style="font-weight:700; font-size:0.88rem;">Attendance Date:</label>
+                <input type="date" id="teacherAttDateInput" class="form-control" style="width:auto; padding:6px 12px;" onchange="App.fetchTeacherAttendance()">
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="App.markAllTeachersPresent()">
+                  ✓ Mark All Faculty Present
+                </button>
+                <button class="btn btn-primary" onclick="App.saveTeacherAttendance()">
+                  💾 Save Faculty Attendance
+                </button>
+              </div>
+            </div>
+
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:20px;">
+              <div class="kpi-card" style="padding:12px;">
+                <div class="kpi-label">Total Faculty</div>
+                <div class="kpi-number" id="teachStatTotal" style="font-size:1.4rem;">0</div>
+              </div>
+              <div class="kpi-card accent-emerald" style="padding:12px;">
+                <div class="kpi-label">Present</div>
+                <div class="kpi-number" id="teachStatPresent" style="font-size:1.4rem; color:#34d399;">0</div>
+              </div>
+              <div class="kpi-card accent-purple" style="padding:12px;">
+                <div class="kpi-label">Absent</div>
+                <div class="kpi-number" id="teachStatAbsent" style="font-size:1.4rem; color:#f87171;">0</div>
+              </div>
+              <div class="kpi-card" style="padding:12px; background:rgba(99,102,241,0.1);">
+                <div class="kpi-label">On Leave</div>
+                <div class="kpi-number" id="teachStatLeave" style="font-size:1.4rem; color:#818cf8;">0</div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Teacher Name</th>
+                    <th>Designation & Incharge</th>
+                    <th>Attendance Status</th>
+                    <th>Remarks / Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="teachersAttendanceTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
-        <!-- 4. CLASSES VIEW -->
+        <!-- 4. CLASSES VIEW (Academic Hub: Prep A to Class 8 with Sub-Categories & Columns) -->
         <section id="view-classes" class="view-section">
           <div class="page-title-bar">
             <div class="title-group">
-              <h1>Classes & Sections</h1>
-              <p>Classrooms, capacity management, and grade allocations.</p>
+              <h1>Classes & Academic Operations (Prep A to Class 8)</h1>
+              <p>Explore class-wise daily attendance, monthly attendance reports, tuition fees (PKR), examination grades, assignments, and timetables.</p>
             </div>
-            <button class="btn btn-primary" onclick="App.openModal('newClassModal')">
-              + Create New Class
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-primary" onclick="App.openModal('newClassModal')">
+                <span>➕ Add New Class</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Class Sub-Category Pills (Prep A to Class 8) -->
+          <div class="class-selector-scroll" id="classSubCategoryPills">
+            <!-- Rendered dynamically without fee attached to class name -->
+          </div>
+
+          <!-- Active Selected Class Information Card (Internal Class Header) -->
+          <div class="school-official-banner class-internal-header" style="margin-bottom:18px; padding:18px 22px; position:relative; overflow:hidden;">
+            <div class="school-banner-left">
+              <div class="school-banner-logo" style="width:54px; height:54px; font-size:26px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, rgba(79,70,229,0.25), rgba(6,182,212,0.25)); border:1px solid rgba(99,102,241,0.3); border-radius:12px;">🏫</div>
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h3 id="hubClassName" style="font-family:var(--font-display); font-size:1.3rem; margin:0; color:#fff; font-weight:700;">Class 8 (Section A)</h3>
+                  <span id="hubClassRoom" style="font-size:0.75rem; padding:3px 10px; background:rgba(255,255,255,0.08); border:1px solid var(--border-color); border-radius:12px; color:var(--text-muted); font-weight:500;">Room: Assigned</span>
+                </div>
+                <p id="hubClassIncharge" style="color:var(--text-muted); font-size:0.83rem; margin:4px 0 0 0;">Class Incharge: David Miller</p>
+              </div>
+            </div>
+
+            <div class="school-banner-contacts" style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">
+              <!-- Fee prominently written in the internal header -->
+              <div class="banner-contact-pill highlight-fee" style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.32); padding:8px 14px; border-radius:12px;">
+                <span class="pill-icon" style="font-size:1.3rem;">💳</span>
+                <div>
+                  <div class="pill-label" style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.5px; color:#6ee7b7; font-weight:700;">Monthly Tuition Fee</div>
+                  <strong id="hubClassFee" style="color:#10b981; font-size:1.05rem; font-weight:800;">PKR 900 / Month</strong>
+                </div>
+              </div>
+
+              <!-- Student Capacity & Enrollment -->
+              <div class="banner-contact-pill" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.28); padding:8px 14px; border-radius:12px;">
+                <span class="pill-icon" style="font-size:1.3rem;">👥</span>
+                <div>
+                  <div class="pill-label" style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.5px; color:#7dd3fc; font-weight:700;">Enrollment & Capacity</div>
+                  <strong id="hubClassCapacity" style="color:#38bdf8; font-size:0.95rem;">0 / 40 Students</strong>
+                </div>
+              </div>
+
+              <!-- Daily Recess -->
+              <div class="banner-contact-pill" style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.28); padding:8px 14px; border-radius:12px;">
+                <span class="pill-icon" style="font-size:1.3rem;">☕</span>
+                <div>
+                  <div class="pill-label" style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.5px; color:#fcd34d; font-weight:700;">Daily Recess</div>
+                  <strong style="color:#fbbf24; font-size:0.95rem;">30-Min Rest & Tea Break</strong>
+                </div>
+              </div>
+
+              <!-- Class Management Action Buttons: Add & Remove -->
+              <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                <button type="button" class="btn btn-secondary" onclick="App.openModal('newClassModal')" title="Create a New Class" style="padding:6px 12px; font-size:0.8rem;">
+                  <span>➕ Add Class</span>
+                </button>
+                <button type="button" class="btn btn-danger" onclick="App.confirmDeleteCurrentClass()" title="Remove this class if created mistakenly" style="padding:6px 12px; font-size:0.8rem; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5;">
+                  <span>🗑️ Remove Class</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-Category Navigation Tabs for the Active Class -->
+          <div class="class-subtabs-nav">
+            <button type="button" class="class-subtab-btn active" id="classTabDailyAtt" onclick="App.switchClassHubTab('daily-att')">
+              <span>📋</span> Daily Attendance
+            </button>
+            <button type="button" class="class-subtab-btn" id="classTabMonthlyAtt" onclick="App.switchClassHubTab('monthly-att')">
+              <span>📅</span> Monthly Attendance Report
+            </button>
+            <button type="button" class="class-subtab-btn" id="classTabFees" onclick="App.switchClassHubTab('fees')">
+              <span>💳</span> Tuition Fees (PKR)
+            </button>
+            <button type="button" class="class-subtab-btn" id="classTabResults" onclick="App.switchClassHubTab('results')">
+              <span>📈</span> Results & Letter Grades
+            </button>
+            <button type="button" class="class-subtab-btn" id="classTabAssignments" onclick="App.switchClassHubTab('assignments')">
+              <span>📝</span> Assignments & Tests
+            </button>
+            <button type="button" class="class-subtab-btn" id="classTabTimetable" onclick="App.switchClassHubTab('timetable')">
+              <span>🕒</span> Timetable & Tea Break
             </button>
           </div>
 
-          <div id="classesGrid" class="classes-grid">
-            <!-- Rendered dynamically -->
+          <!-- SUB-CATEGORY TAB 1: DAILY ATTENDANCE -->
+          <div id="classHubSecDailyAtt" class="panel">
+            <div class="panel-header" id="classAttTeacherHeader" style="flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <label style="font-weight:700; font-size:0.88rem;">Date:</label>
+                <input type="date" id="classDailyAttDate" class="form-control" style="width:auto; padding:6px 12px;" onchange="App.loadClassHubDailyAttendance()">
+              </div>
+              <div id="classAttActionButtons" style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="App.markAllClassStudentsPresent()">
+                  ✓ Mark All Present
+                </button>
+                <button class="btn btn-primary" onclick="App.saveClassHubAttendance()">
+                  💾 Save Attendance
+                </button>
+              </div>
+            </div>
+
+            <!-- Student Notice Header (Visible only when logged in as Student) -->
+            <div id="classAttStudentHeader" style="display:none; padding:14px 18px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:8px; margin-bottom:18px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:1.6rem;">📋</span>
+                <div>
+                  <strong style="color:#a5b4fc; font-size:0.95rem;">My Verified Attendance Record</strong>
+                  <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">
+                    Attendance is recorded daily by your designated class teacher. Students cannot take or modify attendance records. Below is your official attendance status.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Attendance Stats Counters -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:18px;">
+              <div class="kpi-card" style="padding:12px;">
+                <div class="kpi-label" id="classAttStatLabelTotal">Class Enrolled</div>
+                <div class="kpi-number" id="classAttStatTotal" style="font-size:1.35rem;">0</div>
+              </div>
+              <div class="kpi-card accent-emerald" style="padding:12px;">
+                <div class="kpi-label">Present</div>
+                <div class="kpi-number" id="classAttStatPresent" style="font-size:1.35rem; color:#34d399;">0</div>
+              </div>
+              <div class="kpi-card accent-purple" style="padding:12px;">
+                <div class="kpi-label">Absent</div>
+                <div class="kpi-number" id="classAttStatAbsent" style="font-size:1.35rem; color:#f87171;">0</div>
+              </div>
+              <div class="kpi-card" style="padding:12px; background:rgba(99,102,241,0.1);">
+                <div class="kpi-label">On Leave</div>
+                <div class="kpi-number" id="classAttStatLeave" style="font-size:1.35rem; color:#818cf8;">0</div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr id="classDailyAttHeadRow">
+                    <th>Roll #</th>
+                    <th>Student Name</th>
+                    <th>Admission No</th>
+                    <th>Father Contact</th>
+                    <th>Attendance Status</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="classDailyAttTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          <!-- SUB-CATEGORY TAB 2: MONTHLY ATTENDANCE REPORT (Column Form) -->
+          <div id="classHubSecMonthlyAtt" class="panel" style="display:none;">
+            <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+              <div class="panel-title">
+                <span>📅</span> Monthly Attendance Performance Summary
+              </div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <label style="font-weight:700; font-size:0.88rem;">Month:</label>
+                <input type="month" id="classMonthlyAttMonth" class="form-control" style="width:auto; padding:6px 12px;" onchange="App.loadClassHubMonthlyReport()">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Roll #</th>
+                    <th>Student Name</th>
+                    <th>Father Contact</th>
+                    <th>Total Days</th>
+                    <th>Present</th>
+                    <th>Absent</th>
+                    <th>Leave</th>
+                    <th>Attendance Rate</th>
+                    <th>Standing</th>
+                  </tr>
+                </thead>
+                <tbody id="classMonthlyReportTableBody">
+                  <!-- Rendered dynamically in column form -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-CATEGORY TAB 3: TUITION FEES (PKR) -->
+          <div id="classHubSecFees" class="panel" style="display:none;">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>💳</span> Tuition Fee Register (in Pakistani Rupees - PKR)
+              </div>
+              <button class="btn btn-primary" id="btnCreateFeeInvoice" onclick="App.openModal('newFeeModal')">
+                + Create Fee Invoice
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Roll #</th>
+                    <th>Student Name</th>
+                    <th>Father Contact</th>
+                    <th>Monthly Fee</th>
+                    <th>Amount Paid</th>
+                    <th>Fee Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="classFeesTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-CATEGORY TAB 4: RESULTS & LETTER GRADES -->
+          <div id="classHubSecResults" class="panel" style="display:none;">
+            <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+              <div class="panel-title">
+                <span>📈</span> Examination Results & Grade Cards (Letter Grades Only)
+              </div>
+              <div style="display:flex; gap:10px;">
+                <select id="classExamFilter" class="form-control" style="width:auto; padding:6px 12px;" onchange="App.loadClassHubGrades()">
+                  <!-- Exams populated dynamically -->
+                </select>
+                <button class="btn btn-primary" id="btnEnterSubjectMarks" onclick="App.openModal('newMarkModal')">
+                  + Enter Subject Marks
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Roll #</th>
+                    <th>Student Name</th>
+                    <th>Father Contact</th>
+                    <th>Subject</th>
+                    <th>Marks Obtained / Total</th>
+                    <th>Letter Grade</th>
+                    <th>Result Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="classGradesTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-CATEGORY TAB 5: ASSIGNMENTS & TESTS -->
+          <div id="classHubSecAssignments" class="panel" style="display:none;">
+            <div class="panel-header" style="flex-wrap:wrap; gap:12px;">
+              <div class="panel-title">
+                <span>📝</span> Class Assignments, Homework & Tests
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" id="btnStudentSubmitAssignment" onclick="App.openSubmitAssignmentModal()" style="display:none; background:linear-gradient(135deg, var(--secondary), var(--accent-purple)); border:none;">
+                  📤 Submit Assignment to Teacher
+                </button>
+                <button class="btn btn-primary" id="btnAddAssignment" onclick="App.openModal('newAssignmentModal')">
+                  + Add Assignment / Test
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Topic / Title</th>
+                    <th>Subject</th>
+                    <th>Type</th>
+                    <th>Due Date</th>
+                    <th>Max Marks</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="classAssignmentsTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Student Submissions Log Panel -->
+            <div id="studentSubmissionsWrapper" style="margin-top:24px; display:none;">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <span>📬</span> My Submitted Assignments
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>Submission Topic</th>
+                      <th>Assignment Title</th>
+                      <th>Submitted To Teacher</th>
+                      <th>Submission Date</th>
+                      <th>Status</th>
+                      <th>Teacher Feedback / Score</th>
+                    </tr>
+                  </thead>
+                  <tbody id="studentSubmissionsTableBody">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-CATEGORY TAB 6: TIMETABLE & 30-MIN TEA BREAK -->
+          <div id="classHubSecTimetable" class="panel" style="display:none;">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🕒</span> Class Weekly Timetable & Tea Break Schedule
+              </div>
+              <button class="btn btn-primary" id="btnAddTimetableSlot" onclick="App.openModal('newTimetableSlotModal')">
+                + Add Timetable Slot
+              </button>
+            </div>
+
+            <div class="tea-break-card" style="margin-bottom:18px;">
+              <div class="tea-break-icon">☕</div>
+              <div class="tea-break-content">
+                <h3>30-Minute Rest & Tea Break</h3>
+                <p>Scheduled daily from 11:00 AM to 11:30 AM for students to relax and teachers to refresh.</p>
+              </div>
+            </div>
+
+            <div id="classTimetableGrid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
         </section>
 
-        <!-- 5. ATTENDANCE VIEW -->
+        <!-- 5. ATTENDANCE VIEW (Students & Teacher Attendance with Auto-Calculation) -->
         <section id="view-attendance" class="view-section">
           <div class="page-title-bar">
             <div class="title-group">
               <h1>Daily Attendance Register</h1>
-              <p>Track student and section attendance with 1-click status recording.</p>
+              <p>Automatic real-time calculation of Present, Absent, Leave, and Late for both Students & Teachers.</p>
             </div>
             <div style="display:flex; gap:10px;">
               <button class="btn btn-secondary" onclick="App.markAllPresent()">
                 ✓ Mark All Present
               </button>
-              <button class="btn btn-primary" onclick="App.saveAttendance()">
+              <button class="btn btn-primary" onclick="App.saveCurrentAttendance()">
                 💾 Save Attendance
               </button>
             </div>
           </div>
 
-          <!-- Attendance KPI cards -->
-          <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:24px;">
-            <div class="kpi-card" style="padding:16px;">
-              <div class="kpi-label">Class Total</div>
-              <div class="kpi-number" id="attStatTotal" style="font-size:1.6rem;">0</div>
+          <!-- Sub-Tab Navigation: Students vs Teachers -->
+          <div class="tab-pill-bar">
+            <button class="tab-pill active" id="tabBtnStudentAtt" onclick="App.switchAttendanceTab('students')">
+              🎓 Students Attendance
+            </button>
+            <button class="tab-pill" id="tabBtnTeacherAtt" onclick="App.switchAttendanceTab('teachers')">
+              👨‍🏫 Teachers & Staff Attendance
+            </button>
+          </div>
+
+          <!-- Attendance KPI cards (Auto-calculated in real time) -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom:24px;">
+            <div class="kpi-card" style="padding:14px;">
+              <div class="kpi-label">Total Enrolled</div>
+              <div class="kpi-number" id="attStatTotal" style="font-size:1.5rem;">0</div>
             </div>
-            <div class="kpi-card accent-emerald" style="padding:16px;">
+            <div class="kpi-card accent-emerald" style="padding:14px;">
               <div class="kpi-label">Present</div>
-              <div class="kpi-number" id="attStatPresent" style="font-size:1.6rem; color:#34d399;">0</div>
+              <div class="kpi-number" id="attStatPresent" style="font-size:1.5rem; color:#34d399;">0</div>
             </div>
-            <div class="kpi-card accent-amber" style="padding:16px;">
-              <div class="kpi-label">Late</div>
-              <div class="kpi-number" id="attStatLate" style="font-size:1.6rem; color:#fbbf24;">0</div>
-            </div>
-            <div class="kpi-card accent-purple" style="padding:16px;">
+            <div class="kpi-card accent-purple" style="padding:14px;">
               <div class="kpi-label">Absent</div>
-              <div class="kpi-number" id="attStatAbsent" style="font-size:1.6rem; color:#f87171;">0</div>
+              <div class="kpi-number" id="attStatAbsent" style="font-size:1.5rem; color:#f87171;">0</div>
+            </div>
+            <div class="kpi-card" style="padding:14px; background:rgba(99,102,241,0.1); border-color:rgba(99,102,241,0.3);">
+              <div class="kpi-label">On Leave</div>
+              <div class="kpi-number" id="attStatLeave" style="font-size:1.5rem; color:#a5b4fc;">0</div>
+            </div>
+            <div class="kpi-card accent-amber" style="padding:14px;">
+              <div class="kpi-label">Late</div>
+              <div class="kpi-number" id="attStatLate" style="font-size:1.5rem; color:#fbbf24;">0</div>
             </div>
           </div>
 
-          <div class="panel">
+          <!-- Tab Content: Student Attendance -->
+          <div id="attendanceStudentPanel" class="panel">
             <div class="filter-bar">
               <div>
                 <label class="form-label">Date</label>
@@ -350,9 +1119,10 @@
               <table class="modern-table">
                 <thead>
                   <tr>
-                    <th>Roll No</th>
-                    <th>Student</th>
+                    <th>Roll #</th>
+                    <th>Student Name</th>
                     <th>Class</th>
+                    <th>Father Contact</th>
                     <th>Status</th>
                     <th>Remarks</th>
                   </tr>
@@ -363,21 +1133,46 @@
               </table>
             </div>
           </div>
+
+          <!-- Tab Content: Teacher Attendance -->
+          <div id="attendanceTeacherPanel" class="panel" style="display:none;">
+            <div class="filter-bar">
+              <div>
+                <label class="form-label">Date</label>
+                <input type="date" id="teacherAttDatePicker" class="form-control" onchange="App.renderTeacherAttendance()">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Employee ID</th>
+                    <th>Teacher Name</th>
+                    <th>Role / Managed Class</th>
+                    <th>Contact Phone</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherAttTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
 
-        <!-- 6. GRADES & EXAMS VIEW -->
-        <section id="view-grades" class="view-section">
+        <!-- 6. CLASS TIMETABLE & TEA BREAK VIEW -->
+        <section id="view-timetable" class="view-section">
           <div class="page-title-bar">
             <div class="title-group">
-              <h1>Examinations & Academic Grading</h1>
-              <p>Manage exam sessions, subject marks, GPA calculations, and student transcripts.</p>
+              <h1>Class Timetable & Daily Schedule</h1>
+              <p>Period schedules, assigned teachers, and a designated <strong>30-minute Rest & Tea Break</strong> for students and teachers.</p>
             </div>
             <div style="display:flex; gap:10px;">
-              <button class="btn btn-secondary" onclick="App.openModal('newExamModal')">
-                + New Exam Session
-              </button>
-              <button class="btn btn-primary" onclick="App.openModal('newMarkModal')">
-                + Enter Marks
+              <button class="btn btn-primary" onclick="App.openModal('newTimetableSlotModal')">
+                + Add / Customize Period
               </button>
             </div>
           </div>
@@ -385,7 +1180,63 @@
           <div class="panel">
             <div class="filter-bar">
               <div>
-                <label class="form-label">Exam</label>
+                <label class="form-label">Select Class to View Timetable</label>
+                <select id="timetableClassSelect" class="filter-select class-select-target" onchange="App.renderTimetable()">
+                </select>
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:8px 14px; font-size:0.85rem; color:#fbbf24;">
+                  ☕ <strong id="ttBreakText">30-Minute Rest & Tea Break</strong> included in daily routine.
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Period #</th>
+                    <th>Time Interval</th>
+                    <th>Subject</th>
+                    <th>Teacher Incharge</th>
+                    <th>Type</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="timetableTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. GRADES & EXAMS VIEW (Grades Only, No GPA, Fail for <= 33) -->
+        <section id="view-grades" class="view-section">
+          <div class="page-title-bar">
+            <div class="title-group">
+              <h1>Examinations & Academic Grading (Grades Only)</h1>
+              <p>Passing standard is strictly 33%. Students scoring 33 marks or below fail and must bring their father.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" id="btnNewExam" onclick="App.openModal('newExamModal')">
+                + New Exam Session
+              </button>
+              <button class="btn btn-primary" id="btnEnterMarks" onclick="App.openModal('newMarkModal')">
+                + Enter Marks
+              </button>
+            </div>
+          </div>
+
+          <!-- Teacher Notice Banner (When logged in as a teacher) -->
+          <div id="teacherRestrictionBanner" style="display:none; background:rgba(79,70,229,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:10px; padding:12px 18px; margin-bottom:18px; color:#c7d2fe; font-size:0.88rem;">
+            🔒 <strong>Teacher Mode Active:</strong> You are authorized to record and update student marks <strong>only for your assigned class</strong> (<span id="teacherAssignedClassText">Class 8</span>).
+          </div>
+
+          <div class="panel">
+            <div class="filter-bar">
+              <div>
+                <label class="form-label">Exam Session</label>
                 <select id="gradesExamSelect" class="filter-select" onchange="App.fetchMarks()"></select>
               </div>
               <div>
@@ -400,13 +1251,14 @@
               <table class="modern-table">
                 <thead>
                   <tr>
-                    <th>Roll No</th>
+                    <th>Roll #</th>
                     <th>Student Name</th>
+                    <th>Father Contact</th>
                     <th>Subject</th>
-                    <th>Marks</th>
+                    <th>Marks Scored</th>
                     <th>Percentage</th>
-                    <th>Grade & GPA</th>
-                    <th>Transcript</th>
+                    <th>Letter Grade</th>
+                    <th>Official Transcript</th>
                   </tr>
                 </thead>
                 <tbody id="gradesTableBody">
@@ -417,31 +1269,76 @@
           </div>
         </section>
 
-        <!-- 7. FEES VIEW -->
+        <!-- 8. ASSIGNMENTS & TESTS VIEW (Teacher Authority) -->
+        <section id="view-assignments" class="view-section">
+          <div class="page-title-bar">
+            <div class="title-group">
+              <h1>Assignments & Class Tests Management</h1>
+              <p>Teachers can create, view, and edit test topics, test dates, and assignments for their classes.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.openModal('newAssignmentModal')">
+              + Create Test / Assignment
+            </button>
+          </div>
+
+          <div class="panel">
+            <div class="filter-bar">
+              <select id="assignmentClassFilter" class="filter-select class-select-target" onchange="App.renderAssignments()">
+                <option value="">All Classes</option>
+              </select>
+              <select id="assignmentTypeFilter" class="filter-select" onchange="App.renderAssignments()">
+                <option value="">All Types (Tests & Assignments)</option>
+                <option value="Test">Class Tests Only</option>
+                <option value="Assignment">Homework Assignments Only</option>
+              </select>
+            </div>
+
+            <div class="table-responsive">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Class</th>
+                    <th>Subject</th>
+                    <th>Title & Test Topic</th>
+                    <th>Test / Due Date</th>
+                    <th>Total Marks</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="assignmentsTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. FEES VIEW (All in PKR) -->
         <section id="view-fees" class="view-section">
           <div class="page-title-bar">
             <div class="title-group">
-              <h1>Fee & Financial Management</h1>
-              <p>Tuition billing, payment invoices, receipts, and revenue reconciliation.</p>
+              <h1>Fee & Billing Management (PKR)</h1>
+              <p>Pakistani Rupee tuition billing. Max PKR 900 for Class 8, decreasing sequentially down to PKR 450 for Prep A.</p>
             </div>
-            <button class="btn btn-primary" onclick="App.openModal('newFeeModal')">
+            <button class="btn btn-primary" id="btnGenerateFee" onclick="App.openModal('newFeeModal')">
               + Generate Fee Invoice
             </button>
           </div>
 
-          <!-- Fee summary metrics -->
+          <!-- Fee summary metrics in PKR -->
           <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:24px;">
             <div class="kpi-card accent-emerald" style="padding:18px;">
-              <div class="kpi-label">Total Collected</div>
-              <div class="kpi-number" id="feeStatCollected" style="color:#34d399;">$0</div>
+              <div class="kpi-label">Total Collected (PKR)</div>
+              <div class="kpi-number" id="feeStatCollected" style="color:#34d399;">PKR 0</div>
             </div>
             <div class="kpi-card accent-amber" style="padding:18px;">
-              <div class="kpi-label">Pending Collection</div>
-              <div class="kpi-number" id="feeStatPending" style="color:#fbbf24;">$0</div>
+              <div class="kpi-label">Pending Collection (PKR)</div>
+              <div class="kpi-number" id="feeStatPending" style="color:#fbbf24;">PKR 0</div>
             </div>
             <div class="kpi-card accent-purple" style="padding:18px;">
-              <div class="kpi-label">Overdue Balance</div>
-              <div class="kpi-number" id="feeStatOverdue" style="color:#f87171;">$0</div>
+              <div class="kpi-label">Overdue Balance (PKR)</div>
+              <div class="kpi-number" id="feeStatOverdue" style="color:#f87171;">PKR 0</div>
             </div>
           </div>
 
@@ -461,8 +1358,10 @@
                   <tr>
                     <th>Invoice #</th>
                     <th>Student</th>
+                    <th>Father Contact</th>
+                    <th>Class</th>
                     <th>Description</th>
-                    <th>Amount</th>
+                    <th>Amount (PKR)</th>
                     <th>Due Date</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -476,22 +1375,256 @@
           </div>
         </section>
 
-        <!-- 8. NOTICES VIEW -->
-        <section id="view-notices" class="view-section">
+        <!-- 10. MORNING ASSEMBLY VIEW (Arranged by PT Sir) -->
+        <section id="view-assembly" class="view-section">
           <div class="page-title-bar">
             <div class="title-group">
-              <h1>School Notice Board & Bulletins</h1>
-              <p>Publish circulars, academic notices, and school-wide announcements.</p>
+              <h1>Morning Assembly Section</h1>
+              <p>Organized & Conducted by <strong>PT Sir Tariq Mehmood</strong>. Daily Tilawat, Naat, Speech, and Physical PT Drills.</p>
             </div>
-            <button class="btn btn-primary" onclick="App.openModal('newNoticeModal')">
-              + Post Announcement
+            <button class="btn btn-primary" id="btnScheduleAssembly" onclick="App.openModal('newAssemblyModal')">
+              + Arrange / Schedule Assembly
             </button>
           </div>
 
-          <div id="noticesFeedFull">
+          <div id="assemblyFeed">
             <!-- Rendered dynamically -->
           </div>
         </section>
+
+        <!-- 11. PRINCIPAL MEETINGS VIEW (Principal Authority) -->
+        <section id="view-meetings" class="view-section">
+          <div class="page-title-bar">
+            <div class="title-group">
+              <h1>Principal Meetings & Consultations</h1>
+              <p>Arranged by <strong>Principal Musharaf Khan</strong>. Faculty coordination, academic councils, and parent advisory sessions.</p>
+            </div>
+            <button class="btn btn-primary" id="btnArrangeMeeting" onclick="App.openModal('newMeetingModal')">
+              + Arrange New Meeting
+            </button>
+          </div>
+
+          <div id="meetingsFeed">
+            <!-- Rendered dynamically -->
+          </div>
+        </section>
+
+        <!-- 12. SCHOOL RULES VIEW (Principal Authority) -->
+        <section id="view-rules" class="view-section">
+          <div class="page-title-bar">
+            <div class="title-group">
+              <h1>Official School Rules & Code of Conduct</h1>
+              <p>Authorized and issued by <strong>Principal Musharaf Khan</strong>. Binding on all students, faculty, and administrative staff.</p>
+            </div>
+            <button class="btn btn-primary" id="btnPublishRule" onclick="App.openModal('newRuleModal')">
+              + Publish New Rule
+            </button>
+          </div>
+
+          <div class="panel" style="margin-bottom:20px;">
+            <div class="filter-bar">
+              <select id="ruleCategoryFilter" class="filter-select" onchange="App.renderRules()">
+                <option value="">All Categories</option>
+                <option value="General Conduct">General Conduct</option>
+                <option value="Dress Code">Dress Code & Uniform</option>
+                <option value="Discipline">Discipline & Devices</option>
+                <option value="Examinations">Examinations & Integrity</option>
+                <option value="Fee Policy">Fee Policy (PKR)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="rulesFeed">
+            <!-- Rendered dynamically -->
+          </div>
+        </section>
+
+        <!-- 6. NOTICES & BULLETINS VIEW (With sub-tabs: Bulletins, Meetings, Rules) -->
+        <section id="view-notices" class="view-section">
+          <div class="page-title-bar">
+            <div class="title-group">
+              <h1>School Notice Board & Administrative Hub</h1>
+              <p>Official circulars, Principal meetings arranged by <strong>Principal Musharaf Khan</strong>, and code of conduct.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" onclick="App.openModal('newMeetingModal')">
+                📅 Arrange Meeting
+              </button>
+              <button class="btn btn-primary" id="btnPostNotice" onclick="App.openModal('newNoticeModal')">
+                + Post Announcement
+              </button>
+            </div>
+          </div>
+
+          <!-- Sub-Tab Navigation for Notice Board -->
+          <div class="tab-pill-bar">
+            <button class="tab-pill active" id="tabNoticeBulletinsBtn" onclick="App.switchNoticeBoardTab('bulletins')">
+              📢 Bulletins & Circulars
+            </button>
+            <button class="tab-pill" id="tabNoticeMeetingsBtn" onclick="App.switchNoticeBoardTab('meetings')">
+              📅 Principal Meetings (Musharaf Khan)
+            </button>
+            <button class="tab-pill" id="tabNoticeRulesBtn" onclick="App.switchNoticeBoardTab('rules')">
+              📜 Official School Rules
+            </button>
+          </div>
+
+          <!-- TAB 1: Bulletins -->
+          <div id="noticeSecBulletins">
+            <div id="noticesFeedFull">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- TAB 2: Principal Meetings -->
+          <div id="noticeSecMeetings" style="display:none;">
+            <div id="meetingsFeedHub">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- TAB 3: School Rules -->
+          <div id="noticeSecRules" style="display:none;">
+            <div id="rulesFeedHub">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. OFFICIAL CONTACT & LOGO VIEW (Upload logo from SSD / Local Storage) -->
+        <section id="view-official-contact" class="view-section">
+          <div class="page-title-bar">
+            <div class="title-group">
+              <h1>Official School Contact & Branding Profile</h1>
+              <p>Customise your school name, contact numbers, email, sports week date, and upload a school logo directly from your SSD / computer.</p>
+            </div>
+          </div>
+
+          <!-- Logo Management Panel -->
+          <div class="panel" id="officialLogoManagePanel" style="margin-bottom:24px;">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🖼️</span> School Logo Management (From Computer / SSD Storage)
+              </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:20px; padding:8px 0;">
+              <div id="officialLogoPreviewBox" style="width:84px; height:84px; border-radius:var(--radius-md); background:linear-gradient(135deg, var(--primary), var(--accent-purple)); display:flex; align-items:center; justify-content:center; font-size:42px; overflow:hidden; border:2px solid var(--border-glass); box-shadow:0 6px 18px var(--primary-glow); flex-shrink:0;">
+                🎓
+              </div>
+              <div style="flex:1; min-width:260px;" id="officialLogoUploadSection">
+                <h4 style="margin:0 0 4px 0; font-size:1.05rem;">Upload Custom Logo from SSD / Main Storage</h4>
+                <p style="color:var(--text-muted); font-size:0.84rem; margin:0 0 12px 0;">
+                  Select any PNG, JPG, JPEG, SVG, or WEBP image file from your system storage. The logo will immediately be visible across the entire portal, header, sidebar, dashboard banner, and student report cards.
+                </p>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                  <input type="file" id="officialLogoDiskInput" accept="image/*" class="form-control" style="width:auto; padding:7px 12px; font-size:0.85rem;" onchange="App.handleLogoFileSelect(event)">
+                  <button type="button" class="btn btn-primary" onclick="App.uploadSelectedLogo()">
+                    🚀 Upload & Set School Logo
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="App.resetSchoolLogo()">
+                    ↺ Reset to Default Icon
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official School Profile & Settings Form -->
+          <div class="panel" style="margin-bottom:24px;">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>⚙️</span> Official School Contact Information
+              </div>
+            </div>
+
+            <div id="officialStudentNotice" style="display:none; padding:12px 18px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:8px; margin-bottom:16px;">
+              <strong style="color:#a5b4fc;">🏛️ Verified Official School Contacts & Information</strong>
+              <div style="font-size:0.83rem; color:var(--text-muted); margin-top:2px;">
+                Official school contacts, email, campus address, sports week, and recess break timings for student and guardian reference.
+              </div>
+            </div>
+
+            <form id="officialContactForm" onsubmit="App.handleSaveOfficialProfile(event)">
+              <div class="form-grid" style="margin-bottom:16px;">
+                <div class="form-group">
+                  <label class="form-label">School Name *</label>
+                  <input type="text" id="offSchoolName" class="form-control" required placeholder="EduPulse Academy">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Fallback Emoji Icon</label>
+                  <input type="text" id="offLogoIcon" class="form-control" placeholder="🎓">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label">School Tagline / Motto</label>
+                <input type="text" id="offSchoolTagline" class="form-control" placeholder="Excellence in Academic and Character Development">
+              </div>
+
+              <div class="form-grid" style="margin-bottom:16px;">
+                <div class="form-group">
+                  <label class="form-label">Official Contact Number *</label>
+                  <input type="tel" id="offSchoolPhone" class="form-control" required placeholder="+92 322-9594616">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Official Email Address *</label>
+                  <input type="email" id="offSchoolEmail" class="form-control" required placeholder="rafiqhaqyar524@gmail.com">
+                </div>
+              </div>
+
+              <div class="form-grid" style="margin-bottom:16px;">
+                <div class="form-group">
+                  <label class="form-label">Sports Week Date Schedule</label>
+                  <input type="text" id="offSportsWeek" class="form-control" placeholder="Nov 18 - Nov 24, 2026">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tea & Recess Break (Minutes)</label>
+                  <input type="number" id="offRecessBreak" class="form-control" value="30">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:20px;">
+                <label class="form-label">School Campus Address</label>
+                <textarea id="offSchoolAddress" class="form-control" rows="2" placeholder="Main Campus, Bajaur / Peshawar"></textarea>
+              </div>
+
+              <button type="submit" id="btnSaveOfficialContact" class="btn btn-primary" style="padding:12px 24px;">
+                💾 Save School Contact & Profile
+              </button>
+            </form>
+          </div>
+
+          <!-- Developer Info Card -->
+          <div class="panel" style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.25);">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px;">
+              <div>
+                <h4 style="margin:0 0 4px 0; color:#a5b4fc;">💻 System Developer Information</h4>
+                <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">
+                  Designed & Developed by <strong>Rafiq Haqyar</strong> for multi-role school and academic administration.
+                </p>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                <a href="tel:+923229594616" class="btn btn-secondary" style="font-size:0.82rem; padding:8px 14px;">
+                  📞 923229594616
+                </a>
+                <a href="mailto:rafiqhaqyar524@gmail.com" class="btn btn-secondary" style="font-size:0.82rem; padding:8px 14px;">
+                  ✉️ rafiqhaqyar524@gmail.com
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- DEVELOPER FOOTER BADGE -->
+        <footer class="developer-footer">
+          <div class="developer-pill">
+            <span>💻 System Developed by: <strong>Rafiq Haqyar</strong></span>
+            <span>•</span>
+            <span>📞 Contact: <a href="tel:+923229594616">+92 322-9594616</a></span>
+            <span>•</span>
+            <span>✉️ Email: <a href="mailto:rafiqhaqyar524@gmail.com">rafiqhaqyar524@gmail.com</a></span>
+          </div>
+        </footer>
 
       </div>
     </main>
@@ -501,7 +1634,7 @@
        MODALS
        ========================================================================= -->
 
-  <!-- Modal: Enroll New Student -->
+  <!-- Modal: Enroll New Student (Teacher or Admin) -->
   <div class="modal-backdrop" id="newStudentModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -532,30 +1665,26 @@
               <input type="date" name="dob" class="form-control">
             </div>
             <div class="form-group">
-              <label class="form-label">Assign Class</label>
-              <select name="class_id" class="form-control class-select-target">
+              <label class="form-label">Assign Class (Prep A to Class 8) *</label>
+              <select name="class_id" id="enrollClassSelect" class="form-control class-select-target" required onchange="App.onEnrollClassChange(this.value)">
                 <option value="">Select Class</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Roll Number</label>
-              <input type="text" name="roll_no" class="form-control" placeholder="e.g. 10A-15">
+              <label class="form-label">Sequential Roll Number (Auto/Manual)</label>
+              <input type="text" name="roll_no" id="enrollRollInput" class="form-control" placeholder="e.g. 1, 2, 3...">
             </div>
             <div class="form-group full-width">
-              <label class="form-label">Parent / Guardian Name</label>
-              <input type="text" name="parent_name" class="form-control" placeholder="Thomas Wright">
+              <label class="form-label">Father / Guardian Name *</label>
+              <input type="text" name="parent_name" class="form-control" required placeholder="Thomas Wright">
             </div>
-            <div class="form-group">
-              <label class="form-label">Parent Phone</label>
-              <input type="tel" name="parent_phone" class="form-control" placeholder="+1 555-0199">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Parent Email</label>
-              <input type="email" name="parent_email" class="form-control" placeholder="parent@mail.com">
+            <div class="form-group full-width">
+              <label class="form-label">Father Contact Number * <span style="color:var(--danger);">(Mandatory)</span></label>
+              <input type="tel" name="parent_phone" class="form-control" required placeholder="+92 322-9594616">
             </div>
             <div class="form-group full-width">
               <label class="form-label">Residential Address</label>
-              <textarea name="address" class="form-control" rows="2" placeholder="Street Address, City, State"></textarea>
+              <textarea name="address" class="form-control" rows="2" placeholder="Street Address, City, Village"></textarea>
             </div>
           </div>
         </div>
@@ -567,35 +1696,79 @@
     </div>
   </div>
 
-  <!-- Modal: Student Profile Details -->
+  <!-- Modal: Student Profile Details (With Paper-wise Marks & Monthly Attendance) -->
   <div class="modal-backdrop" id="studentProfileModal">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width:760px;">
       <div class="modal-header">
-        <h3 class="modal-title">Student Profile Dossier</h3>
+        <h3 class="modal-title">Student Profile & Academic Record</h3>
         <button class="modal-close" data-modal-close>×</button>
       </div>
       <div class="modal-body">
         <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border-color);">
-          <div class="student-avatar" style="width:54px; height:54px; font-size:1.3rem;">🎓</div>
+          <div class="student-avatar" style="width:58px; height:58px; font-size:1.4rem;">🎓</div>
           <div>
             <h2 id="profileStudentName" style="font-family:var(--font-display); font-size:1.4rem;">Student Name</h2>
-            <div style="color:var(--text-muted); font-size:0.88rem;">ID: <strong id="profileAdmissionNo" style="color:var(--secondary);"></strong></div>
+            <div style="color:var(--text-muted); font-size:0.88rem;">
+              Admission No: <strong id="profileAdmissionNo" style="color:var(--secondary);"></strong> • Roll #: <strong id="profileRollNo" style="color:#34d399;"></strong>
+            </div>
           </div>
         </div>
 
-        <div class="form-grid" style="font-size:0.88rem;">
+        <div class="form-grid" style="font-size:0.88rem; margin-bottom:20px;">
           <div><strong style="color:var(--text-dim)">Class:</strong> <div id="profileClass"></div></div>
-          <div><strong style="color:var(--text-dim)">Roll Number:</strong> <div id="profileRollNo"></div></div>
-          <div><strong style="color:var(--text-dim)">Gender:</strong> <div id="profileGender"></div></div>
-          <div><strong style="color:var(--text-dim)">Date of Birth:</strong> <div id="profileDob"></div></div>
-          <div><strong style="color:var(--text-dim)">Parent / Guardian:</strong> <div id="profileParentName"></div></div>
-          <div><strong style="color:var(--text-dim)">Emergency Contact:</strong> <div id="profileParentPhone"></div></div>
-          <div class="full-width"><strong style="color:var(--text-dim)">Address:</strong> <div id="profileAddress"></div></div>
-          <div class="full-width" style="background:rgba(255,255,255,0.03); padding:12px; border-radius:8px;">
-            <strong style="color:var(--text-dim)">Attendance Performance:</strong>
-            <div id="profileAttRate" style="font-weight:700; color:#34d399; margin-top:4px;"></div>
+          <div><strong style="color:var(--text-dim)">Father's Name:</strong> <div id="profileParentName"></div></div>
+          <div><strong style="color:var(--text-dim)">Father Contact:</strong> <div id="profileParentPhone" style="font-weight:700; color:var(--secondary);"></div></div>
+          <div><strong style="color:var(--text-dim)">Address:</strong> <div id="profileAddress"></div></div>
+        </div>
+
+        <!-- Paper-wise Result History -->
+        <div style="margin-bottom:24px;">
+          <h4 style="font-family:var(--font-display); font-size:1.05rem; margin-bottom:8px; color:var(--text-main);">
+            📊 Paper-Wise Examination Results
+          </h4>
+          <div class="table-responsive">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Exam</th>
+                  <th>Subject</th>
+                  <th>Marks Obtained</th>
+                  <th>Max</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="profileMarksBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
           </div>
         </div>
+
+        <!-- Monthly Attendance Breakdown -->
+        <div>
+          <h4 style="font-family:var(--font-display); font-size:1.05rem; margin-bottom:8px; color:var(--text-main);">
+            📅 Monthly Attendance Report
+          </h4>
+          <div class="table-responsive">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Total Days</th>
+                  <th>Present</th>
+                  <th>Absent</th>
+                  <th>Leave</th>
+                  <th>Attendance %</th>
+                </tr>
+              </thead>
+              <tbody id="profileMonthlyAttBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-modal-close>Close</button>
@@ -603,7 +1776,7 @@
     </div>
   </div>
 
-  <!-- Modal: Add Faculty Member -->
+  <!-- Modal: Add Faculty Member (Salary in PKR) -->
   <div class="modal-backdrop" id="newTeacherModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -615,31 +1788,45 @@
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">First Name *</label>
-              <input type="text" name="first_name" class="form-control" required placeholder="Elena">
+              <input type="text" name="first_name" class="form-control" required placeholder="Musharaf">
             </div>
             <div class="form-group">
               <label class="form-label">Last Name *</label>
-              <input type="text" name="last_name" class="form-control" required placeholder="Rostova">
+              <input type="text" name="last_name" class="form-control" required placeholder="Khan">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role Designation</label>
+              <select name="role_designation" class="form-control">
+                <option value="Teacher">Teacher / Subject Incharge</option>
+                <option value="Principal">Principal</option>
+                <option value="PT Instructor">PT Instructor (Physical Training)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assign Managed Class</label>
+              <select name="assigned_class_id" class="form-control class-select-target">
+                <option value="">None / Administration</option>
+              </select>
             </div>
             <div class="form-group">
               <label class="form-label">Email *</label>
-              <input type="email" name="email" class="form-control" required placeholder="e.rostova@school.edu">
+              <input type="email" name="email" class="form-control" required placeholder="musharaf.khan@school.edu">
             </div>
             <div class="form-group">
               <label class="form-label">Phone Number</label>
-              <input type="tel" name="phone" class="form-control" placeholder="+1 555-0104">
+              <input type="tel" name="phone" class="form-control" placeholder="+92 300-1234567">
             </div>
             <div class="form-group">
               <label class="form-label">Subject Specialization</label>
-              <input type="text" name="subject_specialization" class="form-control" placeholder="Computer Science">
+              <input type="text" name="subject_specialization" class="form-control" placeholder="Academic Leadership / Mathematics">
             </div>
             <div class="form-group">
               <label class="form-label">Qualification / Degree</label>
-              <input type="text" name="qualification" class="form-control" placeholder="M.S Computer Science">
+              <input type="text" name="qualification" class="form-control" placeholder="M.Ed / M.Sc / B.P.Ed">
             </div>
             <div class="form-group">
-              <label class="form-label">Annual Salary ($)</label>
-              <input type="number" name="salary" class="form-control" placeholder="60000">
+              <label class="form-label">Monthly Salary (PKR) *</label>
+              <input type="number" name="salary" class="form-control" required placeholder="55000">
             </div>
             <div class="form-group">
               <label class="form-label">Joining Date</label>
@@ -655,7 +1842,7 @@
     </div>
   </div>
 
-  <!-- Modal: Create New Class -->
+  <!-- Modal: Create New Class (Capacity 1 to 100, Fee in PKR) -->
   <div class="modal-backdrop" id="newClassModal">
     <div class="modal-box" style="max-width:480px;">
       <div class="modal-header">
@@ -666,19 +1853,23 @@
         <div class="modal-body">
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Class Name *</label>
-            <input type="text" name="name" class="form-control" required placeholder="e.g. Grade 11 - Biology">
+            <input type="text" name="name" class="form-control" required placeholder="e.g. Class 8">
           </div>
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Section *</label>
             <input type="text" name="section" class="form-control" required placeholder="e.g. A">
           </div>
           <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Monthly Tuition Fee (PKR) *</label>
+            <input type="number" step="50" name="monthly_fee" class="form-control" required placeholder="900">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Room Number</label>
-            <input type="text" name="room_number" class="form-control" placeholder="Room 304">
+            <input type="text" name="room_number" class="form-control" placeholder="Room 108">
           </div>
           <div class="form-group">
-            <label class="form-label">Student Capacity</label>
-            <input type="number" name="capacity" class="form-control" value="35">
+            <label class="form-label">Student Capacity (1 to 100) *</label>
+            <input type="number" name="capacity" class="form-control" min="1" max="100" value="40" required>
           </div>
         </div>
         <div class="modal-footer">
@@ -689,7 +1880,37 @@
     </div>
   </div>
 
-  <!-- Modal: Enter Marks -->
+  <!-- Modal: Confirm Delete Class (Remove mistakenly created class) -->
+  <div class="modal-backdrop" id="deleteClassModal">
+    <div class="modal-box" style="max-width:470px; border-top: 4px solid var(--danger);">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:var(--danger); display:flex; align-items:center; gap:8px;">
+          <span>⚠️</span> Remove Class Confirmation
+        </h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:var(--radius-md); padding:16px; margin-bottom:16px;">
+          <p style="font-weight:600; color:#fca5a5; margin-bottom:6px; font-size:0.9rem;">Are you sure you want to remove this class?</p>
+          <div style="font-size:1.15rem; font-weight:800; color:#fff;" id="deleteClassTargetName">Class 8 (Section A)</div>
+          <p style="font-size:0.83rem; color:var(--text-muted); margin-top:8px; margin-bottom:0; line-height:1.45;" id="deleteClassWarningNote">
+            If this class was created by mistake, removing it will unassign any enrolled students and remove class timetables.
+          </p>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.4;">
+          Please confirm below to remove this class permanently from the school system.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel / Keep Class</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmDeleteClass" onclick="App.executeDeleteCurrentClass()" style="background:var(--danger); border-color:var(--danger); color:#fff; font-weight:700;">
+          <span>🗑️ Remove Class</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Enter Marks (Grades Only, Pass mark > 33) -->
   <div class="modal-backdrop" id="newMarkModal">
     <div class="modal-box" style="max-width:520px;">
       <div class="modal-header">
@@ -700,13 +1921,15 @@
         <div class="modal-body">
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Examination *</label>
-            <select name="exam_id" class="form-control" required>
+            <select name="exam_id" id="newMarkExamSelect" class="form-control" required>
               <option value="1">Mid-Term Examinations 2026</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:14px;">
-            <label class="form-label">Student ID (Internal ID) *</label>
-            <input type="number" name="student_id" class="form-control" required placeholder="e.g. 1">
+            <label class="form-label">Student *</label>
+            <select name="student_id" id="newMarkStudentSelect" class="form-control" required>
+              <option value="">Select Student</option>
+            </select>
           </div>
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Subject ID *</label>
@@ -714,8 +1937,8 @@
           </div>
           <div class="form-grid" style="margin-bottom:14px;">
             <div class="form-group">
-              <label class="form-label">Marks Obtained *</label>
-              <input type="number" step="0.5" name="marks_obtained" class="form-control" required placeholder="95">
+              <label class="form-label">Marks Obtained * <small style="color:var(--danger);">(<=33 is Fail)</small></label>
+              <input type="number" step="0.5" name="marks_obtained" class="form-control" required placeholder="75">
             </div>
             <div class="form-group">
               <label class="form-label">Maximum Marks</label>
@@ -724,7 +1947,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Teacher's Remarks</label>
-            <input type="text" name="remarks" class="form-control" placeholder="Outstanding performance">
+            <input type="text" name="remarks" class="form-control" placeholder="Outstanding / Needs Father Consultation">
           </div>
         </div>
         <div class="modal-footer">
@@ -735,9 +1958,9 @@
     </div>
   </div>
 
-  <!-- Modal: Printable Official Report Card -->
+  <!-- Modal: Printable Official Report Card (Grades ONLY, No GPA; Fail Notice) -->
   <div class="modal-backdrop" id="reportCardModal">
-    <div class="modal-box" style="max-width:720px; background:#ffffff; color:#0f172a;">
+    <div class="modal-box" style="max-width:740px; background:#ffffff; color:#0f172a;">
       <div class="modal-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
         <h3 class="modal-title" style="color:#0f172a;">📜 Official Academic Report Card</h3>
         <div style="display:flex; gap:10px;">
@@ -746,10 +1969,15 @@
         </div>
       </div>
       <div class="modal-body report-card-container">
-        <div class="report-header">
-          <h2>EDUPULSE ACADEMY</h2>
-          <p style="color:#64748b; font-size:0.85rem;">Excellence in Academic and Character Development</p>
-          <h4 style="margin-top:10px; font-weight:700; color:#4338ca;">STUDENT PROGRESS & GRADE TRANSCRIPT</h4>
+        <div class="report-header" style="text-align:center;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:8px;">
+            <div id="reportCardSchoolLogo" style="width:50px; height:50px; border-radius:8px; overflow:hidden; font-size:26px; display:flex; align-items:center; justify-content:center; background:#e0e7ff; flex-shrink:0;">🎓</div>
+            <div style="text-align:left;">
+              <h2 id="rcSchoolName" style="margin:0; font-size:1.4rem;">EDUPULSE ACADEMY</h2>
+              <p id="rcSchoolTagline" style="color:#64748b; font-size:0.85rem; margin:2px 0 0 0;">Excellence in Academic and Character Development</p>
+            </div>
+          </div>
+          <h4 style="margin-top:6px; font-weight:700; color:#4338ca; letter-spacing:0.5px;">OFFICIAL STUDENT PROGRESS & GRADE CARD</h4>
         </div>
 
         <div class="report-meta-grid">
@@ -757,8 +1985,8 @@
           <div><strong>Admission No:</strong> <span id="rcAdmissionNo"></span></div>
           <div><strong>Grade / Class:</strong> <span id="rcClass"></span></div>
           <div><strong>Roll Number:</strong> <span id="rcRollNo"></span></div>
+          <div><strong>Father Contact:</strong> <span id="rcFatherPhone" style="font-weight:700;"></span></div>
           <div><strong>Issue Date:</strong> <span id="rcDate"></span></div>
-          <div><strong>Academic Year:</strong> 2025 - 2026</div>
         </div>
 
         <table class="report-table">
@@ -768,8 +1996,8 @@
               <th>Max Marks</th>
               <th>Marks Scored</th>
               <th>Percentage</th>
-              <th>Grade</th>
-              <th>Remarks</th>
+              <th>Letter Grade</th>
+              <th>Evaluation</th>
             </tr>
           </thead>
           <tbody id="rcTableBody">
@@ -778,39 +2006,47 @@
         </table>
 
         <div class="report-summary-box">
-          <div>Average: <strong id="rcAverage">0%</strong></div>
-          <div>Cumulative GPA: <strong id="rcOverallGpa">0.0</strong></div>
-          <div>Final Evaluation: <strong id="rcOverallGrade">-</strong></div>
+          <div>Overall Percentage: <strong id="rcAverage">0%</strong></div>
+          <div>Final Examination Grade: <strong id="rcOverallGrade">-</strong></div>
+        </div>
+
+        <!-- Red Fail Notice if Student Scored <= 33 -->
+        <div id="rcFailNoticeContainer" style="display:none;">
+          <div class="fail-notice-box">
+            🚨 <strong>CRITICAL PARENT NOTICE:</strong> Student scored <strong>33 marks or below</strong> in paper. The student <strong>MUST bring their father</strong> to meet the Class Teacher & Principal <strong>Musharaf Khan</strong> immediately.
+          </div>
         </div>
 
         <div style="display:flex; justify-content:space-between; margin-top:40px; padding-top:20px; border-top:1px dashed #cbd5e1; font-size:0.85rem; color:#475569;">
           <div>Class Teacher Signature: _____________________</div>
-          <div>Principal Signature: _____________________</div>
+          <div>Principal <strong>Musharaf Khan</strong>: _____________________</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Generate Fee Invoice -->
+  <!-- Modal: Generate Fee Invoice (Sequential Fee in PKR) -->
   <div class="modal-backdrop" id="newFeeModal">
     <div class="modal-box" style="max-width:500px;">
       <div class="modal-header">
-        <h3 class="modal-title">💳 Generate Fee Invoice</h3>
+        <h3 class="modal-title">💳 Generate Fee Invoice (PKR)</h3>
         <button class="modal-close" data-modal-close>×</button>
       </div>
       <form id="newFeeForm">
         <div class="modal-body">
           <div class="form-group" style="margin-bottom:14px;">
-            <label class="form-label">Student ID (Internal ID) *</label>
-            <input type="number" name="student_id" class="form-control" required placeholder="e.g. 1">
+            <label class="form-label">Student *</label>
+            <select name="student_id" id="feeStudentSelect" class="form-control" required onchange="App.onFeeStudentChange(this.value)">
+              <option value="">Select Student</option>
+            </select>
           </div>
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Fee Description *</label>
-            <input type="text" name="title" class="form-control" required placeholder="Tuition Fee - Term 2">
+            <input type="text" name="title" class="form-control" required value="Monthly Tuition Fee">
           </div>
           <div class="form-group" style="margin-bottom:14px;">
-            <label class="form-label">Amount ($) *</label>
-            <input type="number" step="0.01" name="amount" class="form-control" required placeholder="1250.00">
+            <label class="form-label">Amount (PKR) * <small style="color:var(--secondary);">(Sequential: Max 900 for Class 8, down to 450 for Prep A)</small></label>
+            <input type="number" step="50" name="amount" id="feeAmountInput" class="form-control" required placeholder="900">
           </div>
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Due Date *</label>
@@ -843,7 +2079,7 @@
         <div class="modal-body">
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">Announcement Title *</label>
-            <input type="text" name="title" class="form-control" required placeholder="Inter-School Athletic Championship">
+            <input type="text" name="title" class="form-control" required placeholder="Annual Sports Day Announcement">
           </div>
           <div class="form-grid" style="margin-bottom:14px;">
             <div class="form-group">
@@ -866,12 +2102,498 @@
           </div>
           <div class="form-group">
             <label class="form-label">Notice Message *</label>
-            <textarea name="content" class="form-control" rows="4" required placeholder="Write the circular announcement message here..."></textarea>
+            <textarea name="content" class="form-control" rows="4" required placeholder="Write announcement details here..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
           <button type="submit" class="btn btn-primary">Publish Announcement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Arrange Meeting (Principal Authority) -->
+  <div class="modal-backdrop" id="newMeetingModal">
+    <div class="modal-box" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📅 Arrange Meeting (Principal Musharaf Khan)</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="newMeetingForm">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Meeting Title *</label>
+            <input type="text" name="title" class="form-control" required placeholder="Class 8 Board Exam Preparation Review">
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Meeting Date *</label>
+              <input type="date" name="meeting_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Meeting Time *</label>
+              <input type="text" name="meeting_time" class="form-control" required placeholder="10:30 AM">
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Venue / Room</label>
+              <input type="text" name="venue" class="form-control" value="Principal Conference Room">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Attendees</label>
+              <select name="attendees" class="form-control">
+                <option value="All Teachers">All Faculty Members</option>
+                <option value="Class 8 Faculty">Class 8 Teachers</option>
+                <option value="Parents & Teachers">Parents & Teachers</option>
+                <option value="PT Instructor & Sports Staff">PT Instructor & Sports Staff</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Meeting Agenda *</label>
+            <textarea name="agenda" class="form-control" rows="3" required placeholder="Outline key discussion points and expected outcomes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Schedule Meeting</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Publish School Rule (Principal Authority) -->
+  <div class="modal-backdrop" id="newRuleModal">
+    <div class="modal-box" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📜 Issue Official School Rule (Principal Musharaf Khan)</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="newRuleForm">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Rule Title *</label>
+            <input type="text" name="title" class="form-control" required placeholder="Morning Assembly Punctuality & PT Discipline">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control">
+              <option value="General Conduct">General Conduct</option>
+              <option value="Dress Code">Dress Code & Uniform</option>
+              <option value="Discipline">Discipline & Electronics</option>
+              <option value="Examinations">Examinations & Integrity</option>
+              <option value="Fee Policy">Fee Policy (PKR)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Rule Directive / Description *</label>
+            <textarea name="description" class="form-control" rows="3" required placeholder="Detailed policy directives and standards..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Penalty / Consequence for Non-Compliance</label>
+            <input type="text" name="penalty_or_note" class="form-control" placeholder="e.g. Warning letter and parent summons">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish School Rule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Create Test / Assignment (Teacher Authority) -->
+  <div class="modal-backdrop" id="newAssignmentModal">
+    <div class="modal-box" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📝 Create Test / Homework Assignment</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="newAssignmentForm">
+        <div class="modal-body">
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Type</label>
+              <select name="type" class="form-control">
+                <option value="Test">Class Test</option>
+                <option value="Assignment">Homework Assignment</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Class *</label>
+              <select name="class_id" class="form-control class-select-target" required>
+                <option value="">Select Class</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Subject *</label>
+              <input type="text" name="subject_name" class="form-control" required placeholder="Mathematics">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total Marks</label>
+              <input type="number" name="total_marks" class="form-control" value="25">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Title *</label>
+            <input type="text" name="title" class="form-control" required placeholder="Algebra Chapter 3 Monthly Test">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Test Topic / Syllabus *</label>
+            <input type="text" name="test_topic" class="form-control" required placeholder="Factorization, Linear Equations">
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Test Date *</label>
+              <input type="date" name="test_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Submission Date (Optional)</label>
+              <input type="date" name="submission_date" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instructions for Students</label>
+            <textarea name="instructions" class="form-control" rows="2" placeholder="Bring geometry box and graph papers..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Test / Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Test Topic & Date (Teacher Authority) -->
+  <div class="modal-backdrop" id="editAssignmentModal">
+    <div class="modal-box" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">✏️ Edit Test Topic & Date</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="editAssignmentForm">
+        <input type="hidden" name="id" id="editAssignId">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Title *</label>
+            <input type="text" name="title" id="editAssignTitle" class="form-control" required>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Test Topic / Syllabus *</label>
+            <input type="text" name="test_topic" id="editAssignTopic" class="form-control" required>
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Test Date *</label>
+              <input type="date" name="test_date" id="editAssignTestDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Submission Date</label>
+              <input type="date" name="submission_date" id="editAssignSubDate" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instructions</label>
+            <textarea name="instructions" id="editAssignInstructions" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Test Details</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Student Submit Assignment to Selected Teacher -->
+  <div class="modal-backdrop" id="submitAssignmentModal">
+    <div class="modal-box" style="max-width:580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📤 Submit Assignment to Teacher</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="submitAssignmentForm" onsubmit="App.handleAssignmentSubmission(event)">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Select Assignment / Test *</label>
+            <select id="subAssignmentSelect" class="form-control" required onchange="App.onSubmissionAssignmentChange(this.value)">
+              <option value="">Choose Assignment</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Select Teacher to Submit To *</label>
+            <select id="subTeacherSelect" class="form-control" required>
+              <option value="">Choose Teacher</option>
+            </select>
+            <small style="color:var(--text-dim); margin-top:3px; display:block;">Select your subject teacher or class incharge to evaluate your work.</small>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Submission Title / Topic *</label>
+            <input type="text" id="subTitleInput" class="form-control" required placeholder="e.g. Solutions for Chapter 4 Algebraic Expressions">
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Assignment Content / Answers / Work *</label>
+            <textarea id="subContentInput" class="form-control" rows="6" required placeholder="Write or paste your completed assignment solution, text, summary, or link to work here..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary" style="padding:10px 20px;">🚀 Submit to Teacher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Schedule Morning Assembly (Arranged by PT Sir) -->
+  <div class="modal-backdrop" id="newAssemblyModal">
+    <div class="modal-box" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🏃 Morning Assembly Schedule (PT Sir)</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="newAssemblyForm">
+        <div class="modal-body">
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Assembly Date *</label>
+              <input type="date" name="assembly_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">PT Sir Incharge</label>
+              <input type="text" name="pt_sir_name" class="form-control" value="Tariq Mehmood (PT Sir)" required>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Tilawat-e-Quran By (Student) *</label>
+              <input type="text" name="tilawat_student" class="form-control" required placeholder="Muhammad Ali (Class 8)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Naat-e-Rasool By (Student) *</label>
+              <input type="text" name="naat_student" class="form-control" required placeholder="Ahmad Hassan (Class 7)">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Speech / Moral Topic *</label>
+            <input type="text" name="speech_topic" class="form-control" required placeholder="The Importance of Physical Discipline and Honesty">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">PT & Physical Drill Activity *</label>
+            <input type="text" name="drill_activity" class="form-control" required value="Morning Calisthenics, Arm Drills & March-Past">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Discipline / Uniform Rating</label>
+              <select name="discipline_rating" class="form-control">
+                <option value="Outstanding">Outstanding</option>
+                <option value="Excellent">Excellent</option>
+                <option value="Good">Good</option>
+                <option value="Needs Improvement">Needs Improvement</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Special Announcement / Notice</label>
+              <input type="text" name="special_announcement" class="form-control" placeholder="Mid-term exam slips issued today">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish Assembly Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Change Username & Password (Saved Directly to Database) -->
+  <div class="modal-backdrop" id="changeCredentialsModal">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔑 Update Username & Password</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="changeCredentialsForm" onsubmit="App.handleChangeCredentials(event)">
+        <div class="modal-body">
+          <div style="background:rgba(79,70,229,0.08); border:1px solid rgba(79,70,229,0.2); border-radius:var(--radius-md); padding:10px 14px; margin-bottom:14px; font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+            <span>ℹ️</span>
+            <span>Update your login username or password. Changes will be saved directly into the database.</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Username</label>
+            <input type="text" id="changeUsernameInput" class="form-control" placeholder="Enter username" autocomplete="username">
+            <small style="color:var(--text-dim); font-size:0.74rem;">Leave as-is to keep current username.</small>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Current Password</label>
+            <div style="position:relative;">
+              <input type="password" id="changeCurrentPassInput" class="form-control" placeholder="Enter current password (if changing password)" autocomplete="current-password">
+              <button type="button" class="btn-pass-toggle" onclick="App.togglePasswordVisibility('changeCurrentPassInput', this)" title="Show / Hide Password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:1rem; padding:4px;">👁️</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">New Password</label>
+            <div style="position:relative;">
+              <input type="password" id="changeNewPassInput" class="form-control" placeholder="Enter new password (min. 4 characters)" autocomplete="new-password">
+              <button type="button" class="btn-pass-toggle" onclick="App.togglePasswordVisibility('changeNewPassInput', this)" title="Show / Hide Password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:1rem; padding:4px;">👁️</button>
+            </div>
+            <small style="color:var(--text-dim); font-size:0.74rem;">Leave blank if you only want to change username.</small>
+          </div>
+
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Confirm New Password</label>
+            <div style="position:relative;">
+              <input type="password" id="changeConfirmPassInput" class="form-control" placeholder="Re-type new password" autocomplete="new-password">
+              <button type="button" class="btn-pass-toggle" onclick="App.togglePasswordVisibility('changeConfirmPassInput', this)" title="Show / Hide Password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:1rem; padding:4px;">👁️</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Secret Recovery Word (Optional)</label>
+            <input type="text" id="changeSecretWordInput" class="form-control" placeholder="e.g. pakistan or favourite book">
+            <small style="color:var(--text-dim); font-size:0.74rem;">Used to verify your account if you forget your password.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <span>💾 Save to Database</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: School Settings & Branding (Editable by Admin & Principal) -->
+  <div class="modal-backdrop" id="schoolSettingsModal">
+    <div class="modal-box" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ School Settings & Profile Branding</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="schoolSettingsForm" onsubmit="App.handleSaveSchoolSettings(event)">
+        <div class="modal-body">
+          <!-- Logo File Upload from SSD / Disk -->
+          <div class="form-group" style="margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px dashed var(--border-glass); padding:12px; border-radius:var(--radius-md);">
+            <label class="form-label">School Logo Image (Upload from Computer / SSD)</label>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:6px;">
+              <div id="modalLogoPreviewBox" style="width:50px; height:50px; border-radius:8px; border:1px solid var(--border-glass); display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:24px; background:rgba(255,255,255,0.06); flex-shrink:0;">
+                🎓
+              </div>
+              <div style="flex:1;">
+                <input type="file" id="modalLogoFileInput" accept="image/*" class="form-control" style="padding:6px 10px; font-size:0.84rem;" onchange="App.handleModalLogoFileSelect(event)">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;">Supported: PNG, JPG, JPEG, SVG, WEBP from your SSD / Disk storage.</div>
+              </div>
+              <button type="button" class="btn btn-secondary" style="font-size:0.78rem; padding:6px 10px;" onclick="App.resetSchoolLogo()">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">School Name *</label>
+              <input type="text" id="setSchoolName" class="form-control" required placeholder="EduPulse Academy">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fallback Logo Emoji *</label>
+              <input type="text" id="setSchoolLogo" class="form-control" required placeholder="🎓 or 🏫 or 📚">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">School Tagline / Slogan</label>
+            <input type="text" id="setSchoolTagline" class="form-control" placeholder="Excellence in Academic and Character Development">
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Official Contact Number *</label>
+              <input type="tel" id="setSchoolPhone" class="form-control" required placeholder="+92 322-9594616">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Official Email Address *</label>
+              <input type="email" id="setSchoolEmail" class="form-control" required placeholder="rafiqhaqyar524@gmail.com">
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Sports Week Date Schedule</label>
+              <input type="text" id="setSportsWeek" class="form-control" placeholder="Nov 18 - Nov 24, 2026">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tea & Recess Break (Minutes)</label>
+              <input type="number" id="setRecessBreak" class="form-control" value="30">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">School Campus Address</label>
+            <textarea id="setSchoolAddress" class="form-control" rows="2" placeholder="Main Campus, Bajaur / Peshawar"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save School Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Customize Timetable Slot -->
+  <div class="modal-backdrop" id="newTimetableSlotModal">
+    <div class="modal-box" style="max-width:500px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🕒 Class Timetable Slot</h3>
+        <button class="modal-close" data-modal-close>×</button>
+      </div>
+      <form id="newTimetableForm" onsubmit="App.handleSaveTimetableSlot(event)">
+        <div class="modal-body">
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Class *</label>
+              <select id="ttSlotClassId" class="form-control class-select-target" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Period Number *</label>
+              <input type="number" id="ttPeriodNo" class="form-control" required min="1" max="10" value="1">
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label">Start Time *</label>
+              <input type="text" id="ttStartTime" class="form-control" required placeholder="08:00 AM">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Time *</label>
+              <input type="text" id="ttEndTime" class="form-control" required placeholder="08:45 AM">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Subject / Activity Name *</label>
+            <input type="text" id="ttSubjectName" class="form-control" required placeholder="Mathematics / Recess & Tea Break">
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">Teacher / Incharge Name</label>
+            <input type="text" id="ttTeacherName" class="form-control" placeholder="David Miller / All Faculty">
+          </div>
+          <div class="form-group">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="ttIsBreak">
+              <span>This is the 30-Minute Rest & Tea Break</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Period Slot</button>
         </div>
       </form>
     </div>

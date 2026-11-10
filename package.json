@@ -5,7 +5,11 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "dev": "nodemon server/server.js",
+    "setup": "node server/setup-db.js",
+    "db:setup": "node server/setup-db.js",
+    "db:export": "node server/export-database.js",
+    "db:recovery": "node server/upgrade-db5.js"
   },
   "repository": {
     "type": "git",
